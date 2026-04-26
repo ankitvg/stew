@@ -11,6 +11,7 @@ func renderManagedBlock() string {
 		"This repo uses stew to maintain append-only markdown ledgers.\n\n" +
 		"Run `stew help` first to discover the CLI workflow and available commands.\n" +
 		"Run `stew full-spec` to load the full contract (stew model + all ledger specs).\n" +
+		"When a new ledger is needed, run `stew ledger new <name> --help`; then create it with `stew ledger new <name> ...`.\n" +
 		"Before writing, run `stew append <ledger> --help`; then append entries with `stew append <ledger> ...`.\n\n" +
 		"Default ledgers in this repo:\n" +
 		"- iterations — per-prompt work log\n" +
@@ -33,10 +34,16 @@ func renderStewSpec() string {
 		"Stew stores project context as append-only markdown ledgers under `.stew/`.\n" +
 		"This file is the base model; ledger-specific requirements live in `*.spec.md` files.\n\n" +
 		"## Core Model\n\n" +
-		"- Ledgers are markdown files in `.stew/` (for example `iterations.md`, `decisions.md`).\n" +
-		"- Each ledger should have a companion spec file named `<ledger>.spec.md`.\n" +
-		"- Entries are append-only. Never edit past entries.\n" +
-		"- Use UTC ISO 8601 timestamps with second precision: `YYYY-MM-DDTHH:MM:SSZ`.\n\n" +
+		"A ledger has these durable properties:\n\n" +
+		"- Name: the filename stem, such as `iterations` for `.stew/iterations.md`.\n" +
+		"- Spec: `.stew/<name>.spec.md` defines the ledger's purpose, body conventions, and append threshold.\n" +
+		"- Shared format: entries follow this base model plus the ledger-specific spec.\n" +
+		"- Append-only semantics: never edit past entries.\n" +
+		"- Chronological ordering: newest entries are appended at the bottom.\n" +
+		"- Entry boundaries: each entry starts with an H2 UTC ISO 8601 timestamp and summary.\n" +
+		"- Attribution: each entry includes `**Prompt:**` for the originating prompt.\n" +
+		"- Repo affiliation: ledgers belong to the repository containing their `.stew/` directory.\n\n" +
+		"To add a custom ledger, run `stew ledger new <name>`. Stew commands automatically discover ledgers by their spec file.\n\n" +
 		"## Full Contract\n\n" +
 		"Run `stew full-spec` to print this file plus every `.stew/*.spec.md` file.\n" +
 		"Custom ledgers are discovered automatically when their spec files exist.\n"

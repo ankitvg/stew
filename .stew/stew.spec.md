@@ -5,10 +5,18 @@ This file is the base model; ledger-specific requirements live in `*.spec.md` fi
 
 ## Core Model
 
-- Ledgers are markdown files in `.stew/` (for example `iterations.md`, `decisions.md`).
-- Each ledger should have a companion spec file named `<ledger>.spec.md`.
-- Entries are append-only. Never edit past entries.
-- Use UTC ISO 8601 timestamps with second precision: `YYYY-MM-DDTHH:MM:SSZ`.
+A ledger has these durable properties:
+
+- Name: the filename stem, such as `iterations` for `.stew/iterations.md`.
+- Spec: `.stew/<name>.spec.md` defines the ledger's purpose, body conventions, and append threshold.
+- Shared format: entries follow this base model plus the ledger-specific spec.
+- Append-only semantics: never edit past entries.
+- Chronological ordering: newest entries are appended at the bottom.
+- Entry boundaries: each entry starts with an H2 UTC ISO 8601 timestamp and summary.
+- Attribution: each entry includes `**Prompt:**` for the originating prompt.
+- Repo affiliation: ledgers belong to the repository containing their `.stew/` directory.
+
+To add a custom ledger, run `stew ledger new <name>`. Stew commands automatically discover ledgers by their spec file.
 
 ## Full Contract
 

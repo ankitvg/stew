@@ -14,7 +14,34 @@ func TestRootHelpIncludesAgentWorkflow(t *testing.T) {
 		`Run "stew help" to discover available commands.`,
 		`Run "stew full-spec" to load the repository's ledger contract.`,
 		`Run "stew <command> --help" before using a command you do not know.`,
+		`Use "stew ledger new <name>" to create custom ledgers when needed.`,
+		"stew ledger new plans --description",
 		"stew append iterations --help",
+	}
+	assertHelpContains(t, output, required)
+}
+
+func TestLedgerHelpDocumentsCustomLedgers(t *testing.T) {
+	output := executeHelp(t, "ledger", "--help")
+
+	required := []string{
+		"Manage Stew ledgers.",
+		"Stew discovers ledgers from .stew/*.spec.md files.",
+		`Use "stew ledger new" when`,
+		"new",
+	}
+	assertHelpContains(t, output, required)
+}
+
+func TestLedgerNewHelpDocumentsCreationContract(t *testing.T) {
+	output := executeHelp(t, "ledger", "new", "--help")
+
+	required := []string{
+		"Create a custom Stew ledger in an initialized repository.",
+		"The command writes .stew/<name>.md and .stew/<name>.spec.md.",
+		"Names must use lowercase ASCII letters, digits, and single hyphens only.",
+		"omitted, the spec contains TODO guidance",
+		"stew ledger new plans --description",
 	}
 	assertHelpContains(t, output, required)
 }

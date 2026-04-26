@@ -164,11 +164,34 @@ func TestRunFreshDirectoryCreatesStewFiles(t *testing.T) {
 	if !strings.Contains(agents, "Run `stew full-spec` to load the full contract") {
 		t.Fatalf("AGENTS managed block missing full-spec entrypoint: %s", agents)
 	}
+	if !strings.Contains(agents, "When a new ledger is needed, run `stew ledger new <name> --help`") {
+		t.Fatalf("AGENTS managed block missing ledger creation guidance: %s", agents)
+	}
 	if !strings.Contains(agents, "Before writing, run `stew append <ledger> --help`") {
 		t.Fatalf("AGENTS managed block missing append help guidance: %s", agents)
 	}
 	if strings.Contains(agents, "Iterations entry spec:") {
 		t.Fatalf("AGENTS managed block should not list spec file paths directly: %s", agents)
+	}
+}
+
+func TestStewSpecDocumentsCustomLedgerPrimitive(t *testing.T) {
+	spec := renderStewSpec()
+	required := []string{
+		"A ledger has these durable properties:",
+		"- Name: the filename stem",
+		"- Spec: `.stew/<name>.spec.md` defines the ledger's purpose",
+		"- Append-only semantics: never edit past entries.",
+		"- Chronological ordering: newest entries are appended at the bottom.",
+		"- Entry boundaries: each entry starts with an H2 UTC ISO 8601 timestamp and summary.",
+		"- Attribution: each entry includes `**Prompt:**` for the originating prompt.",
+		"- Repo affiliation: ledgers belong to the repository containing their `.stew/` directory.",
+		"To add a custom ledger, run `stew ledger new <name>`.",
+	}
+	for _, want := range required {
+		if !strings.Contains(spec, want) {
+			t.Fatalf("stew spec missing %q: %s", want, spec)
+		}
 	}
 }
 
