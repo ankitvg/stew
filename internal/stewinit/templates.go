@@ -9,8 +9,9 @@ func renderManagedBlock() string {
 	return managedBlockStart + "\n" +
 		"## Stew\n\n" +
 		"This repo uses stew to maintain append-only markdown ledgers.\n\n" +
+		"Run `stew help` first to discover the CLI workflow and available commands.\n" +
 		"Run `stew full-spec` to load the full contract (stew model + all ledger specs).\n" +
-		"Append entries with `stew append <ledger> ...`.\n\n" +
+		"Before writing, run `stew append <ledger> --help`; then append entries with `stew append <ledger> ...`.\n\n" +
 		"Default ledgers in this repo:\n" +
 		"- iterations — per-prompt work log\n" +
 		"- decisions — durable architectural and product decisions\n" +

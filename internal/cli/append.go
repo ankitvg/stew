@@ -19,7 +19,22 @@ func newAppendCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "append <ledger>",
 		Short: "Append an entry to a stew ledger",
-		Args:  cobra.ExactArgs(1),
+		Long: `Append a new entry to .stew/<ledger>.md.
+
+The ledger must already be defined by .stew/<ledger>.spec.md. The reserved
+ledger name "stew" is not writable because .stew/stew.spec.md defines the
+shared model contract.
+
+Stew owns the entry header, timestamp, prompt field, and separator. Supply the
+ledger name, the originating prompt, a short summary, and exactly one body
+source: piped stdin, -m/--message, or -F/--file.
+
+Use "stew full-spec" to read the repository's ledger rules before appending.
+Use "stew append <ledger> --help" when you need the command contract.`,
+		Example: `  printf 'Implemented the change and ran go test ./...' | stew append iterations --prompt 'Add append command' --summary 'Implement append command'
+  stew append iterations --prompt 'Small fix' --summary 'Record small fix' -m 'Updated validation and ran tests.'
+  stew append decisions --prompt 'Choose storage model' --summary 'Use append-only ledgers' -F decision-entry.md`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			messageSet := cmd.Flags().Changed("message")
 			fileSet := cmd.Flags().Changed("file")

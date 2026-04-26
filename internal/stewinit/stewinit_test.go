@@ -158,8 +158,14 @@ func TestRunFreshDirectoryCreatesStewFiles(t *testing.T) {
 		t.Fatalf("read AGENTS.md: %v", err)
 	}
 	agents := string(agentsBytes)
+	if !strings.Contains(agents, "Run `stew help` first to discover the CLI workflow") {
+		t.Fatalf("AGENTS managed block missing help-first entrypoint: %s", agents)
+	}
 	if !strings.Contains(agents, "Run `stew full-spec` to load the full contract") {
 		t.Fatalf("AGENTS managed block missing full-spec entrypoint: %s", agents)
+	}
+	if !strings.Contains(agents, "Before writing, run `stew append <ledger> --help`") {
+		t.Fatalf("AGENTS managed block missing append help guidance: %s", agents)
 	}
 	if strings.Contains(agents, "Iterations entry spec:") {
 		t.Fatalf("AGENTS managed block should not list spec file paths directly: %s", agents)
