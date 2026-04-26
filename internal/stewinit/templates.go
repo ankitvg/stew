@@ -8,11 +8,12 @@ const (
 func renderManagedBlock() string {
 	return managedBlockStart + "\n" +
 		"## Stew\n\n" +
-		"This section is managed by `stew init`.\n\n" +
-		"- Iterations ledger: `.stew/iterations.md`\n" +
-		"- Decisions ledger: `.stew/decisions.md`\n" +
-		"- Iterations entry spec: `.stew/iterations.spec.md`\n" +
-		"- Decisions entry spec: `.stew/decisions.spec.md`\n\n" +
+		"This repo uses stew to maintain append-only markdown ledgers.\n\n" +
+		"Run `stew full-spec` to load the full contract (stew model + all ledger specs).\n" +
+		"Append entries with `stew append <ledger> ...`.\n\n" +
+		"Default ledgers in this repo:\n" +
+		"- iterations — per-prompt work log\n" +
+		"- decisions — durable architectural and product decisions\n" +
 		managedBlockEnd + "\n"
 }
 
@@ -24,6 +25,20 @@ func renderIterationsLedger() string {
 func renderDecisionsLedger() string {
 	return "# Decisions\n\n" +
 		"<!-- Managed by stew -->\n"
+}
+
+func renderStewSpec() string {
+	return "# Stew Spec\n\n" +
+		"Stew stores project context as append-only markdown ledgers under `.stew/`.\n" +
+		"This file is the base model; ledger-specific requirements live in `*.spec.md` files.\n\n" +
+		"## Core Model\n\n" +
+		"- Ledgers are markdown files in `.stew/` (for example `iterations.md`, `decisions.md`).\n" +
+		"- Each ledger should have a companion spec file named `<ledger>.spec.md`.\n" +
+		"- Entries are append-only. Never edit past entries.\n" +
+		"- Use UTC ISO 8601 timestamps with second precision: `YYYY-MM-DDTHH:MM:SSZ`.\n\n" +
+		"## Full Contract\n\n" +
+		"Run `stew full-spec` to print this file plus every `.stew/*.spec.md` file.\n" +
+		"Custom ledgers are discovered automatically when their spec files exist.\n"
 }
 
 func renderIterationsSpec() string {

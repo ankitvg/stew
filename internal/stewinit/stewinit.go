@@ -90,6 +90,7 @@ func Run(opts Options) (Result, error) {
 		body    string
 	}{
 		{relPath: filepath.Join(".stew", "config.toml"), body: renderConfig(createdAt, username)},
+		{relPath: filepath.Join(".stew", "stew.spec.md"), body: renderStewSpec()},
 		{relPath: filepath.Join(".stew", "iterations.md"), body: renderIterationsLedger()},
 		{relPath: filepath.Join(".stew", "iterations.spec.md"), body: renderIterationsSpec()},
 		{relPath: filepath.Join(".stew", "decisions.md"), body: renderDecisionsLedger()},

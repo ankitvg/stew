@@ -1,11 +1,12 @@
 <!-- BEGIN STEW (managed) -->
 ## Stew
 
-This section is managed by `stew init`.
+This repo uses stew to maintain append-only markdown ledgers.
 
-- Iterations ledger: `.stew/iterations.md`
-- Decisions ledger: `.stew/decisions.md`
-- Iterations entry spec: `.stew/iterations.spec.md`
-- Decisions entry spec: `.stew/decisions.spec.md`
+Run `stew full-spec` to load the full contract (stew model + all ledger specs).
+Append entries with `stew append <ledger> ...`.
 
+Default ledgers in this repo:
+- iterations — per-prompt work log
+- decisions — durable architectural and product decisions
 <!-- END STEW (managed) -->

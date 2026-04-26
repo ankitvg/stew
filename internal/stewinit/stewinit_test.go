@@ -121,6 +121,7 @@ func TestRunFreshDirectoryCreatesStewFiles(t *testing.T) {
 
 	required := []string{
 		filepath.Join(".stew", "config.toml"),
+		filepath.Join(".stew", "stew.spec.md"),
 		filepath.Join(".stew", "iterations.md"),
 		filepath.Join(".stew", "iterations.spec.md"),
 		filepath.Join(".stew", "decisions.md"),
@@ -150,6 +151,18 @@ func TestRunFreshDirectoryCreatesStewFiles(t *testing.T) {
 	}
 	if !strings.Contains(config, "name = \"env-user\"") {
 		t.Fatalf("config missing expected user name: %s", config)
+	}
+
+	agentsBytes, err := os.ReadFile(filepath.Join(tmp, "AGENTS.md"))
+	if err != nil {
+		t.Fatalf("read AGENTS.md: %v", err)
+	}
+	agents := string(agentsBytes)
+	if !strings.Contains(agents, "Run `stew full-spec` to load the full contract") {
+		t.Fatalf("AGENTS managed block missing full-spec entrypoint: %s", agents)
+	}
+	if strings.Contains(agents, "Iterations entry spec:") {
+		t.Fatalf("AGENTS managed block should not list spec file paths directly: %s", agents)
 	}
 }
 
