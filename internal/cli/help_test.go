@@ -44,6 +44,9 @@ func TestLedgerNewHelpDocumentsCreationContract(t *testing.T) {
 		"stew ledger new plans --description",
 	}
 	assertHelpContains(t, output, required)
+	if strings.Contains(output, "--path") {
+		t.Fatalf("ledger new help should not expose --path\n--- output ---\n%s", output)
+	}
 }
 
 func TestAppendHelpDocumentsBodySourcesAndExamples(t *testing.T) {

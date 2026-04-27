@@ -22,7 +22,6 @@ you need a custom append-only ledger beyond the defaults created by init.`,
 }
 
 func newLedgerNewCmd() *cobra.Command {
-	var targetPath string
 	var description string
 	var threshold string
 	var quiet bool
@@ -39,12 +38,11 @@ Names must use lowercase ASCII letters, digits, and single hyphens only. Supply
 --description and --threshold to make the generated spec useful immediately; if
 omitted, the spec contains TODO guidance that is visible in stew full-spec.`,
 		Example: `  stew ledger new plans --description "Reasoning artifacts for future work" --threshold "Append when a plan captures durable intent or tradeoffs."
-  stew ledger new experiments --path /path/to/repo
+  stew ledger new experiments
   stew ledger new reviews --quiet`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			result, err := stewledger.Run(stewledger.Options{
-				TargetDir:   targetPath,
 				Name:        args[0],
 				Description: description,
 				Threshold:   threshold,
@@ -62,7 +60,6 @@ omitted, the spec contains TODO guidance that is visible in stew full-spec.`,
 		},
 	}
 
-	cmd.Flags().StringVar(&targetPath, "path", ".", "Target directory")
 	cmd.Flags().StringVar(&description, "description", "", "Ledger description for the generated spec")
 	cmd.Flags().StringVar(&threshold, "threshold", "", "Guidance for when to append entries")
 	cmd.Flags().BoolVar(&quiet, "quiet", false, "Suppress standard output")

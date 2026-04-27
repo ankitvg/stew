@@ -10,6 +10,7 @@ import (
 
 func TestLedgerNewCommandCreatesLedgerAndSpec(t *testing.T) {
 	tmp := setupCLIStewDir(t)
+	chdirForTest(t, tmp)
 	var out bytes.Buffer
 
 	cmd := newRootCmd()
@@ -17,7 +18,6 @@ func TestLedgerNewCommandCreatesLedgerAndSpec(t *testing.T) {
 	cmd.SetErr(&bytes.Buffer{})
 	cmd.SetArgs([]string{
 		"ledger", "new", "plans",
-		"--path", tmp,
 		"--description", "Reasoning artifacts for future work.",
 		"--threshold", "Append when a plan captures durable intent or tradeoffs.",
 	})
@@ -48,7 +48,6 @@ func TestLedgerNewCommandCreatesLedgerAndSpec(t *testing.T) {
 	appendCmd.SetErr(&bytes.Buffer{})
 	appendCmd.SetArgs([]string{
 		"append", "plans",
-		"--path", tmp,
 		"--prompt", "Capture plan",
 		"--summary", "Record plan",
 		"-m", "Plan body",
@@ -61,7 +60,7 @@ func TestLedgerNewCommandCreatesLedgerAndSpec(t *testing.T) {
 	var fullSpecOut bytes.Buffer
 	fullSpecCmd.SetOut(&fullSpecOut)
 	fullSpecCmd.SetErr(&bytes.Buffer{})
-	fullSpecCmd.SetArgs([]string{"full-spec", "--path", tmp})
+	fullSpecCmd.SetArgs([]string{"full-spec"})
 	if err := fullSpecCmd.Execute(); err != nil {
 		t.Fatalf("full-spec Execute() error = %v", err)
 	}
@@ -72,6 +71,7 @@ func TestLedgerNewCommandCreatesLedgerAndSpec(t *testing.T) {
 
 func TestLedgerNewCommandQuietSuppressesOutput(t *testing.T) {
 	tmp := setupCLIStewDir(t)
+	chdirForTest(t, tmp)
 	var out bytes.Buffer
 
 	cmd := newRootCmd()
@@ -79,7 +79,6 @@ func TestLedgerNewCommandQuietSuppressesOutput(t *testing.T) {
 	cmd.SetErr(&bytes.Buffer{})
 	cmd.SetArgs([]string{
 		"ledger", "new", "plans",
-		"--path", tmp,
 		"--quiet",
 	})
 
@@ -98,4 +97,20 @@ func setupCLIStewDir(t *testing.T) string {
 		t.Fatalf("mkdir .stew: %v", err)
 	}
 	return tmp
+}
+
+func chdirForTest(t *testing.T, dir string) {
+	t.Helper()
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("get working directory: %v", err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir %s: %v", dir, err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(previous); err != nil {
+			t.Fatalf("restore working directory: %v", err)
+		}
+	})
 }
