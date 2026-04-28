@@ -69,3 +69,19 @@ Created a real `.stew/plans.md` and `.stew/plans.spec.md` in the stew repo using
 Appended the first real plans entry: the full previously confirmed `stew ledger new` implementation plan. Verified `stew full-spec` discovers the new plans spec and `go test ./...` still passes.
 
 ---
+
+## 2026-04-28T02:34:37Z — Prepare release docs
+
+**Prompt:** Lets skip license for a bit more? Do they rest
+
+Expanded README with install, quick-start, command, and release-check guidance for v0.1.0. Updated Makefile so make build creates a versioned dist/stew binary with linker-injected version, commit, and date metadata, while make pre-release still runs tests and package builds first. Validated with make pre-release VERSION=v0.1.0 and ./dist/stew version.
+
+---
+
+## 2026-04-28T02:36:50Z — Publish first release
+
+**Prompt:** commit and push\nand create a release on gh
+
+Committed and published the v0.1.0 release prep. Re-ran stew help and stew full-spec, verified make pre-release VERSION=v0.1.0 passed locally, checked GitHub authentication, and confirmed no existing v0.1.0 tag or release was present before publishing.
+
+---
