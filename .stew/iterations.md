@@ -101,3 +101,27 @@ Replaced the Cobra-based command layer with a standard-library dispatcher using 
 Committed and pushed the standard-library CLI rewrite. Before committing, re-ran stew help and stew full-spec, verified make pre-release VERSION=v0.1.0 passed, and confirmed no Cobra, pflag, mousetrap, or spf13 references remain in go.mod, internal, or cmd.
 
 ---
+
+## 2026-04-28T03:23:02Z — Document agent-first usage
+
+**Prompt:** The current README is actually pretty great. But before install, I want to add an appropriately titled section which basically conveys that stew will most of the time used only by ai agent. from init to append to new ledger creation. Its the AI client that can take care of all this. User doesnt have to really learn anything
+
+Added an Agent-First Usage section before Install in README.md. The section explains that Stew is primarily meant to be operated by an AI coding agent after installation: initializing a repo, reading the full contract, appending iteration or decision entries, and creating new ledgers as needed. Validated with go test ./....
+
+---
+
+## 2026-04-28T03:29:31Z — Clarify agent setup loop
+
+**Prompt:** nice but may be we should mention the entire setup. After all, stew init indeed plugs stew into AGENTS.md, so in a way all user has to do is init stew which cli agent can even do
+
+Refined README.md's Agent-First Usage section to describe the full bootstrap flow: install the CLI, run or ask an agent to run stew init, and let the managed AGENTS.md block teach future agent sessions to run stew help, load full-spec, append entries, and create ledgers. Validated with go test ./....
+
+---
+
+## 2026-04-28T05:21:09Z — Commit README update
+
+**Prompt:** commit and push
+
+Committed and pushed the README agent-first setup update. Before committing, re-ran stew help and stew full-spec, confirmed the pending diff was limited to README.md and .stew/iterations.md, and validated with go test ./....
+
+---

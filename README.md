@@ -7,6 +7,21 @@ database, service, or generated registry.
 Stew stores ledgers under `.stew/`. Each ledger has a markdown file for entries
 and a matching `.spec.md` file that explains when and how to write to it.
 
+## Agent-First Usage
+
+Stew is designed so most day-to-day usage is handled by an AI coding agent, not
+by a human memorizing commands.
+
+The setup loop is intentionally small: install the CLI, then run `stew init` in
+a repo, or ask your coding agent to run it. Init creates `.stew/` and adds a
+managed Stew block to `AGENTS.md`, so future agent sessions know to run
+`stew help`, load `stew full-spec`, append iteration or decision entries, and
+create new ledgers when the project needs more structured memory.
+
+After that, the user usually only needs to ask the agent to keep project context
+up to date. The CLI remains documented and scriptable for anyone who wants to
+drive it directly.
+
 ## Install
 
 For a tagged release:
