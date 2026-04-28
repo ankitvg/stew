@@ -6,20 +6,83 @@ import (
 	"os"
 
 	"github.com/ankitvg/stew/internal/stewappend"
-	"github.com/spf13/cobra"
 )
 
-func newAppendCmd() *cobra.Command {
-	var targetPath string
-	var prompt string
-	var summary string
-	var message string
-	var filePath string
+func runAppend(ctx cliContext, args []string) error {
+	if wantsHelp(args) {
+		fmt.Fprint(ctx.out, appendHelp)
+		return nil
+	}
 
-	cmd := &cobra.Command{
-		Use:   "append <ledger>",
-		Short: "Append an entry to a stew ledger",
-		Long: `Append a new entry to .stew/<ledger>.md.
+	var targetPath string
+	var prompt trackedString
+	var summary trackedString
+	var message trackedString
+	var filePath trackedString
+
+	flags := newFlagSet("append")
+	flags.StringVar(&targetPath, "path", ".", "Target directory")
+	flags.Var(&prompt, "prompt", "Originating user prompt")
+	flags.Var(&summary, "summary", "Entry summary")
+	flags.Var(&message, "message", "Use the given text as the entry body")
+	flags.Var(&message, "m", "Use the given text as the entry body")
+	flags.Var(&filePath, "file", "Read the entry body from a file")
+	flags.Var(&filePath, "F", "Read the entry body from a file")
+
+	positionals, err := parseInterspersedFlags(flags, args, map[string]flagKind{
+		"path":    stringFlag,
+		"prompt":  stringFlag,
+		"summary": stringFlag,
+		"message": stringFlag,
+		"m":       stringFlag,
+		"file":    stringFlag,
+		"F":       stringFlag,
+	})
+	if err != nil {
+		return err
+	}
+	if err := exactArgs(positionals, 1); err != nil {
+		return err
+	}
+
+	var missing []string
+	if !prompt.changed {
+		missing = append(missing, "prompt")
+	}
+	if !summary.changed {
+		missing = append(missing, "summary")
+	}
+	if len(missing) > 0 {
+		return requiredFlags(missing...)
+	}
+
+	var stdin io.Reader
+	var stdinIsTTY func() bool
+	if !message.changed && !filePath.changed {
+		stdin = ctx.in
+		stdinIsTTY = func() bool { return readerIsTerminal(ctx.in) }
+	}
+
+	result, err := stewappend.Run(stewappend.Options{
+		TargetDir:  targetPath,
+		Ledger:     positionals[0],
+		Prompt:     prompt.value,
+		Summary:    summary.value,
+		Message:    message.value,
+		MessageSet: message.changed,
+		FilePath:   filePath.value,
+		Stdin:      stdin,
+		StdinIsTTY: stdinIsTTY,
+	})
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintf(ctx.out, "Appended %s\n", result.LedgerPath)
+	return nil
+}
+
+const appendHelp = `Append a new entry to .stew/<ledger>.md.
 
 The ledger must already be defined by .stew/<ledger>.spec.md. The reserved
 ledger name "stew" is not writable because .stew/stew.spec.md defines the
@@ -30,51 +93,24 @@ ledger name, the originating prompt, a short summary, and exactly one body
 source: piped stdin, -m/--message, or -F/--file.
 
 Use "stew full-spec" to read the repository's ledger rules before appending.
-Use "stew append <ledger> --help" when you need the command contract.`,
-		Example: `  printf 'Implemented the change and ran go test ./...' | stew append iterations --prompt 'Add append command' --summary 'Implement append command'
+Use "stew append <ledger> --help" when you need the command contract.
+
+Usage:
+  stew append <ledger> [flags]
+
+Examples:
+  printf 'Implemented the change and ran go test ./...' | stew append iterations --prompt 'Add append command' --summary 'Implement append command'
   stew append iterations --prompt 'Small fix' --summary 'Record small fix' -m 'Updated validation and ran tests.'
-  stew append decisions --prompt 'Choose storage model' --summary 'Use append-only ledgers' -F decision-entry.md`,
-		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			messageSet := cmd.Flags().Changed("message")
-			fileSet := cmd.Flags().Changed("file")
-			var stdin io.Reader
-			var stdinIsTTY func() bool
-			if !messageSet && !fileSet {
-				stdin = cmd.InOrStdin()
-				stdinIsTTY = func() bool { return readerIsTerminal(cmd.InOrStdin()) }
-			}
+  stew append decisions --prompt 'Choose storage model' --summary 'Use append-only ledgers' -F decision-entry.md
 
-			result, err := stewappend.Run(stewappend.Options{
-				TargetDir:  targetPath,
-				Ledger:     args[0],
-				Prompt:     prompt,
-				Summary:    summary,
-				Message:    message,
-				MessageSet: messageSet,
-				FilePath:   filePath,
-				Stdin:      stdin,
-				StdinIsTTY: stdinIsTTY,
-			})
-			if err != nil {
-				return err
-			}
-
-			fmt.Fprintf(cmd.OutOrStdout(), "Appended %s\n", result.LedgerPath)
-			return nil
-		},
-	}
-
-	cmd.Flags().StringVar(&targetPath, "path", ".", "Target directory")
-	cmd.Flags().StringVar(&prompt, "prompt", "", "Originating user prompt")
-	cmd.Flags().StringVar(&summary, "summary", "", "Entry summary")
-	cmd.Flags().StringVarP(&message, "message", "m", "", "Use the given text as the entry body")
-	cmd.Flags().StringVarP(&filePath, "file", "F", "", "Read the entry body from a file")
-	_ = cmd.MarkFlagRequired("prompt")
-	_ = cmd.MarkFlagRequired("summary")
-
-	return cmd
-}
+Flags:
+  -F, --file string      Read the entry body from a file
+  -h, --help             help for append
+  -m, --message string   Use the given text as the entry body
+      --path string      Target directory (default ".")
+      --prompt string    Originating user prompt
+      --summary string   Entry summary
+`
 
 func readerIsTerminal(reader io.Reader) bool {
 	file, ok := reader.(*os.File)

@@ -19,6 +19,9 @@ func TestRootHelpIncludesAgentWorkflow(t *testing.T) {
 		"stew append iterations --help",
 	}
 	assertHelpContains(t, output, required)
+	if strings.Contains(output, "completion") {
+		t.Fatalf("root help should not include Cobra completion command\n--- output ---\n%s", output)
+	}
 }
 
 func TestLedgerHelpDocumentsCustomLedgers(t *testing.T) {
@@ -91,12 +94,8 @@ func TestFullSpecHelpDocumentsContractLoading(t *testing.T) {
 func executeHelp(t *testing.T, args ...string) string {
 	t.Helper()
 	var out bytes.Buffer
-	cmd := newRootCmd()
-	cmd.SetOut(&out)
-	cmd.SetErr(&bytes.Buffer{})
-	cmd.SetArgs(args)
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("Execute(%v) error = %v", args, err)
+	if err := ExecuteWithIO(args, strings.NewReader(""), &out, &bytes.Buffer{}); err != nil {
+		t.Fatalf("ExecuteWithIO(%v) error = %v", args, err)
 	}
 	return out.String()
 }

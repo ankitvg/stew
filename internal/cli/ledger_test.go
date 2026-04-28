@@ -13,17 +13,13 @@ func TestLedgerNewCommandCreatesLedgerAndSpec(t *testing.T) {
 	chdirForTest(t, tmp)
 	var out bytes.Buffer
 
-	cmd := newRootCmd()
-	cmd.SetOut(&out)
-	cmd.SetErr(&bytes.Buffer{})
-	cmd.SetArgs([]string{
+	err := ExecuteWithIO([]string{
 		"ledger", "new", "plans",
 		"--description", "Reasoning artifacts for future work.",
 		"--threshold", "Append when a plan captures durable intent or tradeoffs.",
-	})
-
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("Execute() error = %v", err)
+	}, strings.NewReader(""), &out, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("ExecuteWithIO() error = %v", err)
 	}
 	wantOut := "Created " + filepath.Join(".stew", "plans.md") + "\n" +
 		"Created " + filepath.Join(".stew", "plans.spec.md") + "\n"
@@ -43,26 +39,19 @@ func TestLedgerNewCommandCreatesLedgerAndSpec(t *testing.T) {
 		t.Fatalf("spec missing threshold: %s", spec)
 	}
 
-	appendCmd := newRootCmd()
-	appendCmd.SetOut(&bytes.Buffer{})
-	appendCmd.SetErr(&bytes.Buffer{})
-	appendCmd.SetArgs([]string{
+	err = ExecuteWithIO([]string{
 		"append", "plans",
 		"--prompt", "Capture plan",
 		"--summary", "Record plan",
 		"-m", "Plan body",
-	})
-	if err := appendCmd.Execute(); err != nil {
-		t.Fatalf("append Execute() error = %v", err)
+	}, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("append ExecuteWithIO() error = %v", err)
 	}
 
-	fullSpecCmd := newRootCmd()
 	var fullSpecOut bytes.Buffer
-	fullSpecCmd.SetOut(&fullSpecOut)
-	fullSpecCmd.SetErr(&bytes.Buffer{})
-	fullSpecCmd.SetArgs([]string{"full-spec"})
-	if err := fullSpecCmd.Execute(); err != nil {
-		t.Fatalf("full-spec Execute() error = %v", err)
+	if err := ExecuteWithIO([]string{"full-spec"}, strings.NewReader(""), &fullSpecOut, &bytes.Buffer{}); err != nil {
+		t.Fatalf("full-spec ExecuteWithIO() error = %v", err)
 	}
 	if !strings.Contains(fullSpecOut.String(), "<!-- .stew/plans.spec.md -->") {
 		t.Fatalf("full-spec missing plans spec: %s", fullSpecOut.String())
@@ -74,16 +63,12 @@ func TestLedgerNewCommandQuietSuppressesOutput(t *testing.T) {
 	chdirForTest(t, tmp)
 	var out bytes.Buffer
 
-	cmd := newRootCmd()
-	cmd.SetOut(&out)
-	cmd.SetErr(&bytes.Buffer{})
-	cmd.SetArgs([]string{
+	err := ExecuteWithIO([]string{
 		"ledger", "new", "plans",
 		"--quiet",
-	})
-
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("Execute() error = %v", err)
+	}, strings.NewReader(""), &out, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("ExecuteWithIO() error = %v", err)
 	}
 	if out.String() != "" {
 		t.Fatalf("stdout = %q, want empty", out.String())

@@ -85,3 +85,19 @@ Expanded README with install, quick-start, command, and release-check guidance f
 Committed and published the v0.1.0 release prep. Re-ran stew help and stew full-spec, verified make pre-release VERSION=v0.1.0 passed locally, checked GitHub authentication, and confirmed no existing v0.1.0 tag or release was present before publishing.
 
 ---
+
+## 2026-04-28T03:17:58Z — Remove Cobra dependency
+
+**Prompt:** PLEASE IMPLEMENT THIS PLAN: Remove Cobra And Use Standard Library CLI
+
+Replaced the Cobra-based command layer with a standard-library dispatcher using flag.FlagSet, explicit help text, and ExecuteWithIO for tests. Preserved documented commands, root version/help flags, command-specific help, and append flags after the ledger positional. Removed Cobra, pflag, and mousetrap from go.mod and deleted go.sum because no third-party dependencies remain. Updated CLI tests away from Cobra command helpers and added a regression check that root help no longer lists completion. Validated with go test ./..., make pre-release VERSION=v0.1.0, manual help/version checks, a temp-repo append using post-positional flags, and an rg check for Cobra dependency residue.
+
+---
+
+## 2026-04-28T03:19:59Z — Commit stdlib CLI
+
+**Prompt:** commit and push
+
+Committed and pushed the standard-library CLI rewrite. Before committing, re-ran stew help and stew full-spec, verified make pre-release VERSION=v0.1.0 passed, and confirmed no Cobra, pflag, mousetrap, or spf13 references remain in go.mod, internal, or cmd.
+
+---

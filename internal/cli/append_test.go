@@ -12,19 +12,15 @@ func TestAppendCommandAppendsMessageBody(t *testing.T) {
 	tmp := setupCLILedger(t, "iterations")
 	var out bytes.Buffer
 
-	cmd := newRootCmd()
-	cmd.SetOut(&out)
-	cmd.SetErr(&bytes.Buffer{})
-	cmd.SetArgs([]string{
+	err := ExecuteWithIO([]string{
 		"append", "iterations",
 		"--path", tmp,
 		"--prompt", "Implement append",
 		"--summary", "Add append command",
 		"-m", "CLI body",
-	})
-
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("Execute() error = %v", err)
+	}, strings.NewReader(""), &out, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("ExecuteWithIO() error = %v", err)
 	}
 	if got := out.String(); got != "Appended "+filepath.Join(".stew", "iterations.md")+"\n" {
 		t.Fatalf("stdout = %q", got)
@@ -39,19 +35,14 @@ func TestAppendCommandAppendsMessageBody(t *testing.T) {
 func TestAppendCommandReadsDefaultStdinBody(t *testing.T) {
 	tmp := setupCLILedger(t, "iterations")
 
-	cmd := newRootCmd()
-	cmd.SetOut(&bytes.Buffer{})
-	cmd.SetErr(&bytes.Buffer{})
-	cmd.SetIn(strings.NewReader("stdin body\n"))
-	cmd.SetArgs([]string{
+	err := ExecuteWithIO([]string{
 		"append", "iterations",
 		"--path", tmp,
 		"--prompt", "Use stdin",
 		"--summary", "Read stdin",
-	})
-
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("Execute() error = %v", err)
+	}, strings.NewReader("stdin body\n"), &bytes.Buffer{}, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("ExecuteWithIO() error = %v", err)
 	}
 
 	content := readCLIFile(t, filepath.Join(tmp, ".stew", "iterations.md"))
@@ -67,19 +58,15 @@ func TestAppendCommandRejectsMultipleExplicitBodySources(t *testing.T) {
 		t.Fatalf("write body: %v", err)
 	}
 
-	cmd := newRootCmd()
-	cmd.SetOut(&bytes.Buffer{})
-	cmd.SetErr(&bytes.Buffer{})
-	cmd.SetArgs([]string{
+	err := ExecuteWithIO([]string{
 		"append", "iterations",
 		"--path", tmp,
 		"--prompt", "Conflict",
 		"--summary", "Reject conflict",
 		"-m", "message body",
 		"-F", bodyPath,
-	})
-
-	if err := cmd.Execute(); err == nil {
+	}, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
+	if err == nil {
 		t.Fatalf("expected error")
 	}
 }
@@ -87,16 +74,11 @@ func TestAppendCommandRejectsMultipleExplicitBodySources(t *testing.T) {
 func TestAppendCommandRequiresPromptAndSummary(t *testing.T) {
 	tmp := setupCLILedger(t, "iterations")
 
-	cmd := newRootCmd()
-	cmd.SetOut(&bytes.Buffer{})
-	cmd.SetErr(&bytes.Buffer{})
-	cmd.SetArgs([]string{
+	err := ExecuteWithIO([]string{
 		"append", "iterations",
 		"--path", tmp,
 		"-m", "body",
-	})
-
-	err := cmd.Execute()
+	}, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
 	if err == nil {
 		t.Fatalf("expected required flag error")
 	}
