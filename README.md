@@ -22,6 +22,20 @@ After that, the user usually only needs to ask the agent to keep project context
 up to date. The CLI remains documented and scriptable for anyone who wants to
 drive it directly.
 
+## Default Ledgers
+
+`stew init` creates two ledgers by default:
+
+- `iterations` is the per-prompt work log. Agents append here after meaningful
+  work so future sessions can reconstruct what changed, why it changed, and how
+  it was validated.
+- `decisions` records durable architectural or product choices. Use it when a
+  choice affects system behavior, contracts, schemas, or future tradeoffs that
+  should not be re-litigated from scratch.
+
+Routine implementation notes belong in `iterations`; decisions that future
+maintainers need to preserve belong in `decisions`.
+
 ## Install
 
 For a tagged release:

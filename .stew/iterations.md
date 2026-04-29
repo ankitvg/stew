@@ -133,3 +133,11 @@ Committed and pushed the README agent-first setup update. Before committing, re-
 Added the Apache License 2.0 text for the stew CLI and documented the license in README.md. Validated with go test ./... and go build ./....
 
 ---
+
+## 2026-04-29T11:43:04Z — Document default ledgers
+
+**Prompt:** Since we are adding iterations and decision ledgers by default, I think the readme should explain what they do
+
+Updated README.md with a Default Ledgers section explaining the purpose of the default iterations and decisions ledgers, including when routine implementation notes versus durable decisions belong in each. Validated with go test ./....
+
+---
