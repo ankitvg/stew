@@ -103,3 +103,7 @@ make pre-release VERSION=v0.1.0
 
 `make pre-release` runs tests, verifies all packages build, and creates a
 versioned local binary at `dist/stew`.
+
+## License
+
+Stew is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
