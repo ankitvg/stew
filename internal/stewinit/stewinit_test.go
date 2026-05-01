@@ -196,7 +196,7 @@ func TestStewSpecDocumentsCustomLedgerPrimitive(t *testing.T) {
 		"To add a custom ledger, run `stew ledger new <name>`.",
 		"## Working With Stew",
 		"Run `stew ledgers` to list writable ledger names and descriptions.",
-		"For each discovered writable ledger, run `stew ledger tail <name> --limit 5` to load recent project memory.",
+		"Run `stew ledger tail --all --limit 5` to load recent project memory from every discovered writable ledger.",
 		"At the end of meaningful work, append entries to the appropriate ledgers according to their specs.",
 		"Use Stew commands as the interface for ledger access: read with `stew ledger tail` or `stew ledger cat`, and write with `stew append`.",
 	}

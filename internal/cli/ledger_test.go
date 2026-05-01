@@ -106,13 +106,37 @@ func TestLedgerCatCommandAcceptsPathFlag(t *testing.T) {
 	}
 }
 
+func TestLedgerCatAllPrintsAllLedgers(t *testing.T) {
+	tmp := setupCLIAllLedgers(t)
+	writeCLIAllLedger(t, tmp, "zeta", "# Zeta\n\n<!-- Managed by stew -->\n")
+	writeCLIAllLedger(t, tmp, "alpha", "# Alpha\n\n<!-- Managed by stew -->\n")
+	var out bytes.Buffer
+
+	err := ExecuteWithIO([]string{"ledger", "cat", "--all", "--path", tmp}, strings.NewReader(""), &out, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("ExecuteWithIO() error = %v", err)
+	}
+
+	want := "# alpha\n\n# Alpha\n\n<!-- Managed by stew -->\n\n" +
+		"# zeta\n\n# Zeta\n\n<!-- Managed by stew -->\n"
+	if out.String() != want {
+		t.Fatalf("stdout = %q, want %q", out.String(), want)
+	}
+	if strings.Contains(out.String(), ".stew") {
+		t.Fatalf("cat --all output exposed ledger path: %s", out.String())
+	}
+}
+
 func TestLedgerCatHelpDocumentsRawOutput(t *testing.T) {
 	output := executeHelp(t, "ledger", "cat", "--help")
 
 	required := []string{
-		"Print a Stew ledger.",
-		"raw ledger markdown to stdout",
+		"Print Stew ledger content.",
+		"For one ledger, the command writes raw ledger markdown to stdout.",
+		"With --all",
+		"stew ledger cat --all",
 		"stew ledger cat iterations | grep",
+		"--all",
 		"--path string",
 	}
 	assertHelpContains(t, output, required)
@@ -167,6 +191,48 @@ func TestLedgerTailCommandUsesDefaultLimit(t *testing.T) {
 	}
 }
 
+func TestLedgerTailAllPrintsRecentEntriesPerLedger(t *testing.T) {
+	tmp := setupCLIAllLedgers(t)
+	writeCLIAllLedger(t, tmp, "zeta", cliLedgerContent(
+		cliEntry("2026-05-01T00:00:04Z", "Zeta one", "zeta one"),
+		cliEntry("2026-05-01T00:00:05Z", "Zeta two", "zeta two"),
+		cliEntry("2026-05-01T00:00:06Z", "Zeta three", "zeta three"),
+	))
+	writeCLIAllLedger(t, tmp, "alpha", cliLedgerContent(
+		cliEntry("2026-05-01T00:00:01Z", "Alpha one", "alpha one"),
+		cliEntry("2026-05-01T00:00:02Z", "Alpha two", "alpha two"),
+		cliEntry("2026-05-01T00:00:03Z", "Alpha three", "alpha three"),
+	))
+	var out bytes.Buffer
+
+	err := ExecuteWithIO([]string{"ledger", "tail", "--all", "--path", tmp, "--limit", "2"}, strings.NewReader(""), &out, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("ExecuteWithIO() error = %v", err)
+	}
+
+	output := out.String()
+	if !strings.HasPrefix(output, "# alpha\n\n") {
+		t.Fatalf("tail --all output did not start with alpha section: %s", output)
+	}
+	if strings.Index(output, "# alpha") > strings.Index(output, "# zeta") {
+		t.Fatalf("tail --all output was not sorted by ledger name: %s", output)
+	}
+	if strings.Contains(output, "Alpha one") || strings.Contains(output, "Zeta one") {
+		t.Fatalf("tail --all included entries outside per-ledger limit: %s", output)
+	}
+	for _, want := range []string{"Alpha two", "Alpha three", "Zeta two", "Zeta three"} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("tail --all missing %q: %s", want, output)
+		}
+	}
+	if strings.Contains(output, "# Iterations") || strings.Contains(output, "<!-- Managed by stew -->") {
+		t.Fatalf("tail --all output included ledger preamble: %s", output)
+	}
+	if strings.Contains(output, ".stew") {
+		t.Fatalf("tail --all output exposed ledger path: %s", output)
+	}
+}
+
 func TestLedgerTailCommandRejectsInvalidLimit(t *testing.T) {
 	tmp := setupCLILedger(t, "iterations")
 
@@ -179,13 +245,52 @@ func TestLedgerTailCommandRejectsInvalidLimit(t *testing.T) {
 	}
 }
 
+func TestLedgerReadAllRejectsLedgerArgument(t *testing.T) {
+	tmp := setupCLILedger(t, "iterations")
+
+	for _, args := range [][]string{
+		{"ledger", "cat", "iterations", "--all", "--path", tmp},
+		{"ledger", "tail", "iterations", "--all", "--path", tmp},
+	} {
+		t.Run(strings.Join(args[:3], " "), func(t *testing.T) {
+			err := ExecuteWithIO(args, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
+			if err == nil {
+				t.Fatalf("expected error")
+			}
+			if !strings.Contains(err.Error(), "cannot use --all with a ledger argument") {
+				t.Fatalf("error = %v, want mutual exclusion error", err)
+			}
+		})
+	}
+}
+
+func TestLedgerReadCommandsStillRequireLedgerWithoutAll(t *testing.T) {
+	for _, args := range [][]string{
+		{"ledger", "cat"},
+		{"ledger", "tail"},
+	} {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			err := ExecuteWithIO(args, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
+			if err == nil {
+				t.Fatalf("expected error")
+			}
+			if !strings.Contains(err.Error(), "accepts 1 arg(s), received 0") {
+				t.Fatalf("error = %v, want missing ledger error", err)
+			}
+		})
+	}
+}
+
 func TestLedgerTailHelpDocumentsEntryAwareOutput(t *testing.T) {
 	output := executeHelp(t, "ledger", "tail", "--help")
 
 	required := []string{
 		"Print recent Stew ledger entries.",
-		"last N entries",
+		"For one ledger, the command writes the last N entries to stdout.",
+		"With --all",
 		"stew ledger tail iterations --limit 5",
+		"stew ledger tail --all --limit 5",
+		"--all",
 		"--limit int",
 		"--path string",
 	}
@@ -200,7 +305,7 @@ func TestLedgerHelpIncludesReadCommands(t *testing.T) {
 
 	required := []string{
 		"cat",
-		"Print a stew ledger",
+		"Print one or all stew ledgers",
 		"new",
 		"Create a custom stew ledger",
 		"tail",
@@ -212,6 +317,22 @@ func TestLedgerHelpIncludesReadCommands(t *testing.T) {
 func writeCLILedgerContent(t *testing.T, dir, ledger, content string) {
 	t.Helper()
 	if err := os.WriteFile(filepath.Join(dir, ".stew", ledger+".md"), []byte(content), 0o644); err != nil {
+		t.Fatalf("write ledger: %v", err)
+	}
+}
+
+func setupCLIAllLedgers(t *testing.T) string {
+	t.Helper()
+	return setupCLIStewDir(t)
+}
+
+func writeCLIAllLedger(t *testing.T, dir, ledger, content string) {
+	t.Helper()
+	stewDir := filepath.Join(dir, ".stew")
+	if err := os.WriteFile(filepath.Join(stewDir, ledger+".spec.md"), []byte("# "+ledger+" Spec\n\nDescription.\n"), 0o644); err != nil {
+		t.Fatalf("write spec: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(stewDir, ledger+".md"), []byte(content), 0o644); err != nil {
 		t.Fatalf("write ledger: %v", err)
 	}
 }

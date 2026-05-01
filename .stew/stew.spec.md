@@ -31,7 +31,7 @@ When starting a new task or session in a repository that uses Stew:
 1. Run `stew help` to discover the available commands.
 2. Run `stew full-spec` to load this workflow plus every ledger-specific contract.
 3. Run `stew ledgers` to list writable ledger names and descriptions.
-4. For each discovered writable ledger, run `stew ledger tail <name> --limit 5` to load recent project memory.
+4. Run `stew ledger tail --all --limit 5` to load recent project memory from every discovered writable ledger.
 5. Use the tailed entries as context, but verify current repo state from the actual files before changing behavior.
 
 During the task, run `stew <command> --help` before using an unfamiliar write command.

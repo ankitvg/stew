@@ -16,8 +16,8 @@ The setup loop is intentionally small: install the CLI, then run `stew init` in
 a repo, or ask your coding agent to run it. Init creates Stew metadata and adds a
 managed Stew block to `AGENTS.md`, so future agent sessions know to run
 `stew help` and load `stew full-spec`. The full spec carries the agent workflow:
-discover ledgers, tail recent entries for context, and append to the appropriate
-ledgers after meaningful work.
+discover ledgers, tail recent entries from all ledgers for context, and append
+to the appropriate ledgers after meaningful work.
 
 After that, the user usually only needs to ask the agent to keep project context
 up to date. The CLI remains documented and scriptable for anyone who wants to
@@ -82,6 +82,7 @@ Print a ledger for reading or shell filtering:
 
 ```sh
 stew ledger cat iterations
+stew ledger cat --all
 stew ledger cat iterations | grep 'Prompt'
 ```
 
@@ -89,6 +90,7 @@ Print recent ledger entries:
 
 ```sh
 stew ledger tail iterations --limit 5
+stew ledger tail --all --limit 5
 ```
 
 Append a work-log entry:
@@ -123,8 +125,8 @@ stew append plans \
 - `stew help` prints the CLI workflow and available commands.
 - `stew full-spec` prints the base Stew spec plus every custom ledger spec.
 - `stew ledgers` lists discovered writable ledger names and descriptions.
-- `stew ledger cat <ledger>` prints a ledger's raw markdown content.
-- `stew ledger tail <ledger>` prints recent entries from a ledger.
+- `stew ledger cat <ledger>` prints one ledger's raw markdown content; `--all` prints every ledger under name sections.
+- `stew ledger tail <ledger>` prints recent entries from one ledger; `--all` prints recent entries from every ledger.
 - `stew append <ledger>` appends a timestamped entry to a known ledger.
 - `stew ledger new <name>` creates a custom ledger and spec.
 - `stew version` prints build metadata.

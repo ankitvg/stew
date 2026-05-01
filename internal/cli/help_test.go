@@ -32,6 +32,8 @@ func TestLedgerHelpDocumentsCustomLedgers(t *testing.T) {
 		"Stew discovers ledgers from ledger specs.",
 		`Use "stew ledger new" when`,
 		"new",
+		"cat",
+		"Print one or all stew ledgers",
 	}
 	assertHelpContains(t, output, required)
 }
