@@ -328,3 +328,19 @@ Validation:
 - `go run ./cmd/stew ledger tail --all --limit 5`
 
 ---
+
+## 2026-05-01T03:27:29Z — Add ledgers JSON output
+
+**Prompt:** PLEASE IMPLEMENT THIS PLAN: Add JSON Output To stew ledgers
+
+Implemented a boolean --json flag for stew ledgers. The JSON response is a top-level object with ledgers entries containing only name and description, preserving sorted discovery order and omitting ledger or target paths. Plain-text output remains unchanged. Updated command help and README docs, and added CLI tests for valid JSON, path flag support, sorted order, newline termination, and path-field exclusion. Validation: go test ./..., go build ./..., go run ./cmd/stew ledgers --json, go run ./cmd/stew ledgers --help, and go run ./cmd/stew ledgers --json --path /Users/ankitgupta/Documents/stewreads/stew.
+
+---
+
+## 2026-05-01T03:30:46Z — Rebuild dist binary
+
+**Prompt:** ankitgupta@Ankits-MacBook-Pro dist % ./stew ledgers --json\nunknown command "ledgers"
+
+Rebuilt the local dist/stew binary after the JSON ledgers implementation because the existing dist binary was stale and did not include the ledgers command. Validation: make build, ./dist/stew ledgers --json, and ./dist/stew version.
+
+---

@@ -76,6 +76,7 @@ List available ledgers:
 
 ```sh
 stew ledgers
+stew ledgers --json
 ```
 
 Print a ledger for reading or shell filtering:
@@ -124,7 +125,7 @@ stew append plans \
 - `stew init` creates Stew metadata, default ledgers, and a managed `AGENTS.md` block.
 - `stew help` prints the CLI workflow and available commands.
 - `stew full-spec` prints the base Stew spec plus every custom ledger spec.
-- `stew ledgers` lists discovered writable ledger names and descriptions.
+- `stew ledgers` lists discovered writable ledger names and descriptions; use `--json` for machine-readable output.
 - `stew ledger cat <ledger>` prints one ledger's raw markdown content; `--all` prints every ledger under name sections.
 - `stew ledger tail <ledger>` prints recent entries from one ledger; `--all` prints recent entries from every ledger.
 - `stew append <ledger>` appends a timestamped entry to a known ledger.
