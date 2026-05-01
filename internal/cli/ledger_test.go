@@ -75,6 +75,64 @@ func TestLedgerNewCommandQuietSuppressesOutput(t *testing.T) {
 	}
 }
 
+func TestLedgerCatCommandPrintsRawLedger(t *testing.T) {
+	tmp := setupCLILedger(t, "iterations")
+	chdirForTest(t, tmp)
+	var out bytes.Buffer
+
+	err := ExecuteWithIO([]string{"ledger", "cat", "iterations"}, strings.NewReader(""), &out, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("ExecuteWithIO() error = %v", err)
+	}
+
+	want := "# Iterations\n\n<!-- Managed by stew -->\n"
+	if out.String() != want {
+		t.Fatalf("stdout = %q, want %q", out.String(), want)
+	}
+}
+
+func TestLedgerCatCommandAcceptsPathFlag(t *testing.T) {
+	tmp := setupCLILedger(t, "decisions")
+	var out bytes.Buffer
+
+	err := ExecuteWithIO([]string{"ledger", "cat", "decisions", "--path", tmp}, strings.NewReader(""), &out, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("ExecuteWithIO() error = %v", err)
+	}
+
+	want := "# Iterations\n\n<!-- Managed by stew -->\n"
+	if out.String() != want {
+		t.Fatalf("stdout = %q, want %q", out.String(), want)
+	}
+}
+
+func TestLedgerCatHelpDocumentsRawOutput(t *testing.T) {
+	output := executeHelp(t, "ledger", "cat", "--help")
+
+	required := []string{
+		"Print a Stew ledger.",
+		"raw .stew/<ledger>.md file to stdout",
+		"stew ledger cat iterations | grep",
+		"--path string",
+	}
+	assertHelpContains(t, output, required)
+
+	helpOutput := executeHelp(t, "help", "ledger", "cat")
+	assertHelpContains(t, helpOutput, required)
+}
+
+func TestLedgerHelpIncludesCatCommand(t *testing.T) {
+	output := executeHelp(t, "ledger", "--help")
+
+	required := []string{
+		"cat",
+		"Print a stew ledger",
+		"new",
+		"Create a custom stew ledger",
+	}
+	assertHelpContains(t, output, required)
+}
+
 func setupCLIStewDir(t *testing.T) string {
 	t.Helper()
 	tmp := t.TempDir()

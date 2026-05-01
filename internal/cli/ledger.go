@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ankitvg/stew/internal/stewledger"
+	"github.com/ankitvg/stew/internal/stewledgercat"
 )
 
 func runLedger(ctx cliContext, args []string) error {
@@ -12,10 +13,47 @@ func runLedger(ctx cliContext, args []string) error {
 		return nil
 	}
 
-	if args[0] != "new" {
+	switch args[0] {
+	case "cat":
+		return runLedgerCat(ctx, args[1:])
+	case "new":
+		return runLedgerNew(ctx, args[1:])
+	default:
 		return fmt.Errorf("unknown ledger command %q", args[0])
 	}
-	return runLedgerNew(ctx, args[1:])
+}
+
+func runLedgerCat(ctx cliContext, args []string) error {
+	if wantsHelp(args) {
+		fmt.Fprint(ctx.out, ledgerCatHelp)
+		return nil
+	}
+
+	var targetPath string
+
+	flags := newFlagSet("ledger cat")
+	flags.StringVar(&targetPath, "path", ".", "Target directory")
+
+	positionals, err := parseInterspersedFlags(flags, args, map[string]flagKind{
+		"path": stringFlag,
+	})
+	if err != nil {
+		return err
+	}
+	if err := exactArgs(positionals, 1); err != nil {
+		return err
+	}
+
+	result, err := stewledgercat.Run(stewledgercat.Options{
+		TargetDir: targetPath,
+		Ledger:    positionals[0],
+	})
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprint(ctx.out, result.Content)
+	return nil
 }
 
 func runLedgerNew(ctx cliContext, args []string) error {
@@ -71,10 +109,29 @@ Usage:
   stew ledger [command]
 
 Available Commands:
+  cat         Print a stew ledger
   new         Create a custom stew ledger
 
 Flags:
   -h, --help   help for ledger
+`
+
+const ledgerCatHelp = `Print a Stew ledger.
+
+The command writes the raw .stew/<ledger>.md file to stdout. Use shell pipes for
+searching or filtering, such as "stew ledger cat iterations | grep parser".
+
+Usage:
+  stew ledger cat <ledger> [flags]
+
+Examples:
+  stew ledger cat iterations
+  stew ledger cat decisions --path /path/to/repo
+  stew ledger cat iterations | grep "Prompt"
+
+Flags:
+  -h, --help          help for cat
+      --path string   Target directory (default ".")
 `
 
 const ledgerNewHelp = `Create a custom Stew ledger in an initialized repository.

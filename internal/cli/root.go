@@ -87,9 +87,15 @@ func runHelp(ctx cliContext, args []string) error {
 	case "full-spec":
 		fmt.Fprint(ctx.out, fullSpecHelp)
 	case "ledger":
-		if len(args) > 1 && args[1] == "new" {
-			fmt.Fprint(ctx.out, ledgerNewHelp)
-			return nil
+		if len(args) > 1 {
+			switch args[1] {
+			case "cat":
+				fmt.Fprint(ctx.out, ledgerCatHelp)
+				return nil
+			case "new":
+				fmt.Fprint(ctx.out, ledgerNewHelp)
+				return nil
+			}
 		}
 		fmt.Fprint(ctx.out, ledgerHelp)
 	case "ledgers":

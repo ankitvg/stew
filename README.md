@@ -77,6 +77,13 @@ List available ledgers:
 stew ledgers
 ```
 
+Print a ledger for reading or shell filtering:
+
+```sh
+stew ledger cat iterations
+stew ledger cat iterations | grep 'Prompt'
+```
+
 Append a work-log entry:
 
 ```sh
@@ -109,6 +116,7 @@ stew append plans \
 - `stew help` prints the CLI workflow and available commands.
 - `stew full-spec` prints `.stew/stew.spec.md` plus every custom ledger spec.
 - `stew ledgers` lists discovered writable ledgers with paths and descriptions.
+- `stew ledger cat <ledger>` prints a ledger's raw markdown content.
 - `stew append <ledger>` appends a timestamped entry to a known ledger.
 - `stew ledger new <name>` creates a custom ledger and spec.
 - `stew version` prints build metadata.
