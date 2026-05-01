@@ -91,7 +91,25 @@ Print recent ledger entries:
 
 ```sh
 stew ledger tail iterations --limit 5
+stew ledger tail iterations --json --limit 5
 stew ledger tail --all --limit 5
+stew ledger tail --all --json --limit 5
+```
+
+JSON tail output is entry-aware:
+
+```json
+{
+  "ledger": "iterations",
+  "entries": [
+    {
+      "timestamp": "2026-05-01T03:53:38Z",
+      "summary": "Add tail JSON output",
+      "prompt": "PLEASE IMPLEMENT THIS PLAN: Add --json To Ledger Tail",
+      "body": "Added --json support to stew ledger tail..."
+    }
+  ]
+}
 ```
 
 Append a work-log entry:
@@ -127,7 +145,7 @@ stew append plans \
 - `stew full-spec` prints the base Stew spec plus every custom ledger spec.
 - `stew ledgers` lists discovered writable ledger names and descriptions; use `--json` for machine-readable output.
 - `stew ledger cat <ledger>` prints one ledger's raw markdown content; `--all` prints every ledger under name sections.
-- `stew ledger tail <ledger>` prints recent entries from one ledger; `--all` prints recent entries from every ledger.
+- `stew ledger tail <ledger>` prints recent entries from one ledger; `--all` prints recent entries from every ledger, and `--json` prints machine-readable output.
 - `stew append <ledger>` appends a timestamped entry to a known ledger.
 - `stew ledger new <name>` creates a custom ledger and spec.
 - `stew version` prints build metadata.

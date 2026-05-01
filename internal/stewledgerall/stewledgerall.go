@@ -16,6 +16,7 @@ type Options struct {
 type Section struct {
 	Name    string
 	Content string
+	Entries []stewledgertail.Entry
 }
 
 type Result struct {
@@ -79,6 +80,7 @@ func Tail(opts Options) (Result, error) {
 		sections = append(sections, Section{
 			Name:    ledger.Name,
 			Content: tailResult.Content,
+			Entries: tailResult.Entries,
 		})
 	}
 

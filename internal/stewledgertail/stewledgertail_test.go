@@ -34,6 +34,11 @@ func TestRunReturnsLastEntriesInFileOrder(t *testing.T) {
 	if strings.Contains(result.Content, "# Iterations") || strings.Contains(result.Content, "<!-- Managed by stew -->") {
 		t.Fatalf("tail output included ledger preamble: %s", result.Content)
 	}
+	if len(result.Entries) != 2 {
+		t.Fatalf("Entries len = %d, want 2", len(result.Entries))
+	}
+	assertEntry(t, result.Entries[0], "2026-05-01T00:00:02Z", "Second", "Test prompt", "second body")
+	assertEntry(t, result.Entries[1], "2026-05-01T00:00:03Z", "Third", "Test prompt", "third body")
 }
 
 func TestRunReturnsAllEntriesWhenLimitExceedsCount(t *testing.T) {
@@ -72,6 +77,9 @@ func TestRunReturnsEmptyContentForLedgerWithoutEntries(t *testing.T) {
 	}
 	if result.Content != "" {
 		t.Fatalf("Content = %q, want empty", result.Content)
+	}
+	if len(result.Entries) != 0 {
+		t.Fatalf("Entries len = %d, want 0", len(result.Entries))
 	}
 }
 
@@ -126,6 +134,37 @@ func TestRunSupportsDefaultTargetDir(t *testing.T) {
 	}
 	if result.Content != entry("2026-05-01T00:00:01Z", "First", "body") {
 		t.Fatalf("Content = %q", result.Content)
+	}
+}
+
+func TestRunParsesMultilinePromptAndBody(t *testing.T) {
+	content := "## 2026-05-01T00:00:01Z — First\n\n" +
+		"**Prompt:**\n" +
+		"Line one\n" +
+		"Line two\n\n" +
+		"body line one\n\n" +
+		"body line two\n\n" +
+		"---\n"
+	tmp := setupTailLedger(t, "iterations", ledgerContent(content))
+
+	result, err := Run(Options{
+		TargetDir: tmp,
+		Ledger:    "iterations",
+		Limit:     1,
+	})
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	if len(result.Entries) != 1 {
+		t.Fatalf("Entries len = %d, want 1", len(result.Entries))
+	}
+	assertEntry(t, result.Entries[0], "2026-05-01T00:00:01Z", "First", "Line one\nLine two", "body line one\n\nbody line two")
+}
+
+func assertEntry(t *testing.T, got Entry, timestamp, summary, prompt, body string) {
+	t.Helper()
+	if got.Timestamp != timestamp || got.Summary != summary || got.Prompt != prompt || got.Body != body {
+		t.Fatalf("Entry = %#v, want timestamp=%q summary=%q prompt=%q body=%q", got, timestamp, summary, prompt, body)
 	}
 }
 

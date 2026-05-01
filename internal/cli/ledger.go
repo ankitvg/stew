@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -86,14 +87,17 @@ func runLedgerTail(ctx cliContext, args []string) error {
 	var all bool
 	var targetPath string
 	var limit int
+	var jsonOutput bool
 
 	flags := newFlagSet("ledger tail")
 	flags.BoolVar(&all, "all", false, "Print entries from all ledgers")
+	flags.BoolVar(&jsonOutput, "json", false, "Print JSON output")
 	flags.StringVar(&targetPath, "path", ".", "Target directory")
 	flags.IntVar(&limit, "limit", 10, "Number of entries to print")
 
 	positionals, err := parseInterspersedFlags(flags, args, map[string]flagKind{
 		"all":   boolFlag,
+		"json":  boolFlag,
 		"path":  argFlag,
 		"limit": argFlag,
 	})
@@ -111,6 +115,9 @@ func runLedgerTail(ctx cliContext, args []string) error {
 		if err != nil {
 			return err
 		}
+		if jsonOutput {
+			return encodeJSON(ctx.out, tailAllJSONResponseFromSections(result.Sections))
+		}
 		fmt.Fprint(ctx.out, renderLedgerSections(result.Sections))
 		return nil
 	}
@@ -127,6 +134,12 @@ func runLedgerTail(ctx cliContext, args []string) error {
 		return err
 	}
 
+	if jsonOutput {
+		return encodeJSON(ctx.out, tailJSONResponse{
+			Ledger:  positionals[0],
+			Entries: tailEntryJSONFromEntries(result.Entries),
+		})
+	}
 	fmt.Fprint(ctx.out, result.Content)
 	return nil
 }
@@ -191,6 +204,59 @@ func renderLedgerSections(sections []stewledgerall.Section) string {
 	return builder.String()
 }
 
+type tailJSONResponse struct {
+	Ledger  string          `json:"ledger"`
+	Entries []tailEntryJSON `json:"entries"`
+}
+
+type tailAllJSONResponse struct {
+	Ledgers []tailLedgerJSON `json:"ledgers"`
+}
+
+type tailLedgerJSON struct {
+	Ledger  string          `json:"ledger"`
+	Entries []tailEntryJSON `json:"entries"`
+}
+
+type tailEntryJSON struct {
+	Timestamp string `json:"timestamp"`
+	Summary   string `json:"summary"`
+	Prompt    string `json:"prompt"`
+	Body      string `json:"body"`
+}
+
+func tailAllJSONResponseFromSections(sections []stewledgerall.Section) tailAllJSONResponse {
+	ledgers := make([]tailLedgerJSON, 0, len(sections))
+	for _, section := range sections {
+		ledgers = append(ledgers, tailLedgerJSON{
+			Ledger:  section.Name,
+			Entries: tailEntryJSONFromEntries(section.Entries),
+		})
+	}
+	return tailAllJSONResponse{Ledgers: ledgers}
+}
+
+func tailEntryJSONFromEntries(entries []stewledgertail.Entry) []tailEntryJSON {
+	result := make([]tailEntryJSON, 0, len(entries))
+	for _, entry := range entries {
+		result = append(result, tailEntryJSON{
+			Timestamp: entry.Timestamp,
+			Summary:   entry.Summary,
+			Prompt:    entry.Prompt,
+			Body:      entry.Body,
+		})
+	}
+	return result
+}
+
+func encodeJSON(out interface {
+	Write([]byte) (int, error)
+}, value any) error {
+	encoder := json.NewEncoder(out)
+	encoder.SetEscapeHTML(false)
+	return encoder.Encode(value)
+}
+
 const ledgerHelp = `Manage Stew ledgers.
 
 Stew discovers ledgers from ledger specs. Use "stew ledger new" when you need a
@@ -234,7 +300,8 @@ const ledgerTailHelp = `Print recent Stew ledger entries.
 
 For one ledger, the command writes the last N entries to stdout. With --all,
 the command writes each ledger's last N entries under a ledger-name section.
-Entries remain in file order.
+Entries remain in file order. Use --json to print entry-aware machine-readable
+JSON.
 
 Usage:
   stew ledger tail <ledger> [flags]
@@ -243,12 +310,15 @@ Usage:
 Examples:
   stew ledger tail iterations
   stew ledger tail iterations --limit 5
+  stew ledger tail iterations --json --limit 5
   stew ledger tail --all --limit 5
+  stew ledger tail --all --json --limit 5
   stew ledger tail decisions --path /path/to/repo --limit 2
 
 Flags:
       --all           Print entries from all ledgers
   -h, --help          help for tail
+      --json          Print JSON output
       --limit int     Number of entries to print (default 10)
       --path string   Target directory (default ".")
 `

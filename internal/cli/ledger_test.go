@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -169,6 +170,44 @@ func TestLedgerTailCommandPrintsRecentEntries(t *testing.T) {
 	}
 }
 
+func TestLedgerTailCommandOutputsJSON(t *testing.T) {
+	tmp := setupCLILedger(t, "iterations")
+	writeCLILedgerContent(t, tmp, "iterations", cliLedgerContent(
+		cliEntry("2026-05-01T00:00:01Z", "First", "first body"),
+		cliEntry("2026-05-01T00:00:02Z", "Second", "second body"),
+		cliEntry("2026-05-01T00:00:03Z", "Third", "third body with <angle>"),
+	))
+	var out bytes.Buffer
+
+	err := ExecuteWithIO([]string{"ledger", "tail", "iterations", "--json", "--path", tmp, "--limit", "2"}, strings.NewReader(""), &out, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("ExecuteWithIO() error = %v", err)
+	}
+
+	ledger, entries := decodeTailJSON(t, out.String())
+	if ledger != "iterations" {
+		t.Fatalf("ledger = %q, want iterations", ledger)
+	}
+	assertTailEntryJSON(t, entries, []wantTailEntry{
+		{
+			timestamp: "2026-05-01T00:00:02Z",
+			summary:   "Second",
+			prompt:    "Test prompt",
+			body:      "second body",
+		},
+		{
+			timestamp: "2026-05-01T00:00:03Z",
+			summary:   "Third",
+			prompt:    "Test prompt",
+			body:      "third body with <angle>",
+		},
+	})
+	if strings.Contains(out.String(), `\u003c`) || strings.Contains(out.String(), `\u003e`) {
+		t.Fatalf("JSON output should not HTML-escape angle brackets: %s", out.String())
+	}
+	assertNoPathFields(t, out.String(), tmp)
+}
+
 func TestLedgerTailCommandUsesDefaultLimit(t *testing.T) {
 	tmp := setupCLILedger(t, "iterations")
 	entries := make([]string, 0, 12)
@@ -233,6 +272,63 @@ func TestLedgerTailAllPrintsRecentEntriesPerLedger(t *testing.T) {
 	}
 }
 
+func TestLedgerTailAllOutputsJSON(t *testing.T) {
+	tmp := setupCLIAllLedgers(t)
+	writeCLIAllLedger(t, tmp, "zeta", cliLedgerContent(
+		cliEntry("2026-05-01T00:00:04Z", "Zeta one", "zeta one"),
+		cliEntry("2026-05-01T00:00:05Z", "Zeta two", "zeta two"),
+		cliEntry("2026-05-01T00:00:06Z", "Zeta three", "zeta three"),
+	))
+	writeCLIAllLedger(t, tmp, "alpha", cliLedgerContent(
+		cliEntry("2026-05-01T00:00:01Z", "Alpha one", "alpha one"),
+		cliEntry("2026-05-01T00:00:02Z", "Alpha two", "alpha two"),
+		cliEntry("2026-05-01T00:00:03Z", "Alpha three", "alpha three"),
+	))
+	var out bytes.Buffer
+
+	err := ExecuteWithIO([]string{"ledger", "tail", "--all", "--json", "--path", tmp, "--limit", "2"}, strings.NewReader(""), &out, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("ExecuteWithIO() error = %v", err)
+	}
+
+	ledgers := decodeTailAllJSON(t, out.String())
+	if len(ledgers) != 2 {
+		t.Fatalf("ledgers len = %d, want 2", len(ledgers))
+	}
+	if ledgers[0].ledger != "alpha" || ledgers[1].ledger != "zeta" {
+		t.Fatalf("ledger order = %q, %q; want alpha, zeta", ledgers[0].ledger, ledgers[1].ledger)
+	}
+	assertTailEntryJSON(t, ledgers[0].entries, []wantTailEntry{
+		{
+			timestamp: "2026-05-01T00:00:02Z",
+			summary:   "Alpha two",
+			prompt:    "Test prompt",
+			body:      "alpha two",
+		},
+		{
+			timestamp: "2026-05-01T00:00:03Z",
+			summary:   "Alpha three",
+			prompt:    "Test prompt",
+			body:      "alpha three",
+		},
+	})
+	assertTailEntryJSON(t, ledgers[1].entries, []wantTailEntry{
+		{
+			timestamp: "2026-05-01T00:00:05Z",
+			summary:   "Zeta two",
+			prompt:    "Test prompt",
+			body:      "zeta two",
+		},
+		{
+			timestamp: "2026-05-01T00:00:06Z",
+			summary:   "Zeta three",
+			prompt:    "Test prompt",
+			body:      "zeta three",
+		},
+	})
+	assertNoPathFields(t, out.String(), tmp)
+}
+
 func TestLedgerTailCommandRejectsInvalidLimit(t *testing.T) {
 	tmp := setupCLILedger(t, "iterations")
 
@@ -289,8 +385,11 @@ func TestLedgerTailHelpDocumentsEntryAwareOutput(t *testing.T) {
 		"For one ledger, the command writes the last N entries to stdout.",
 		"With --all",
 		"stew ledger tail iterations --limit 5",
+		"stew ledger tail iterations --json --limit 5",
 		"stew ledger tail --all --limit 5",
+		"stew ledger tail --all --json --limit 5",
 		"--all",
+		"--json",
 		"--limit int",
 		"--path string",
 	}
@@ -312,6 +411,115 @@ func TestLedgerHelpIncludesReadCommands(t *testing.T) {
 		"Print recent ledger entries",
 	}
 	assertHelpContains(t, output, required)
+}
+
+type decodedTailLedger struct {
+	ledger  string
+	entries []map[string]string
+}
+
+type wantTailEntry struct {
+	timestamp string
+	summary   string
+	prompt    string
+	body      string
+}
+
+func decodeTailJSON(t *testing.T, output string) (string, []map[string]string) {
+	t.Helper()
+	if !strings.HasSuffix(output, "\n") {
+		t.Fatalf("JSON output should end with newline, got %q", output)
+	}
+	if !json.Valid([]byte(output)) {
+		t.Fatalf("stdout is not valid JSON: %q", output)
+	}
+
+	var topLevel map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(output), &topLevel); err != nil {
+		t.Fatalf("unmarshal top-level JSON: %v", err)
+	}
+	if len(topLevel) != 2 {
+		t.Fatalf("top-level keys = %v, want only ledger and entries", keys(topLevel))
+	}
+	rawLedger, ok := topLevel["ledger"]
+	if !ok {
+		t.Fatalf("top-level JSON missing ledger key: %v", keys(topLevel))
+	}
+	rawEntries, ok := topLevel["entries"]
+	if !ok {
+		t.Fatalf("top-level JSON missing entries key: %v", keys(topLevel))
+	}
+
+	var ledger string
+	if err := json.Unmarshal(rawLedger, &ledger); err != nil {
+		t.Fatalf("unmarshal ledger: %v", err)
+	}
+	var entries []map[string]string
+	if err := json.Unmarshal(rawEntries, &entries); err != nil {
+		t.Fatalf("unmarshal entries: %v", err)
+	}
+	return ledger, entries
+}
+
+func decodeTailAllJSON(t *testing.T, output string) []decodedTailLedger {
+	t.Helper()
+	if !strings.HasSuffix(output, "\n") {
+		t.Fatalf("JSON output should end with newline, got %q", output)
+	}
+	if !json.Valid([]byte(output)) {
+		t.Fatalf("stdout is not valid JSON: %q", output)
+	}
+
+	var topLevel map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(output), &topLevel); err != nil {
+		t.Fatalf("unmarshal top-level JSON: %v", err)
+	}
+	if len(topLevel) != 1 {
+		t.Fatalf("top-level keys = %v, want only ledgers", keys(topLevel))
+	}
+	rawLedgers, ok := topLevel["ledgers"]
+	if !ok {
+		t.Fatalf("top-level JSON missing ledgers key: %v", keys(topLevel))
+	}
+
+	var rawItems []map[string]json.RawMessage
+	if err := json.Unmarshal(rawLedgers, &rawItems); err != nil {
+		t.Fatalf("unmarshal ledgers: %v", err)
+	}
+	ledgers := make([]decodedTailLedger, 0, len(rawItems))
+	for i, item := range rawItems {
+		if len(item) != 2 {
+			t.Fatalf("ledgers[%d] keys = %v, want only ledger and entries", i, keys(item))
+		}
+		var ledger string
+		if err := json.Unmarshal(item["ledger"], &ledger); err != nil {
+			t.Fatalf("unmarshal ledgers[%d].ledger: %v", i, err)
+		}
+		var entries []map[string]string
+		if err := json.Unmarshal(item["entries"], &entries); err != nil {
+			t.Fatalf("unmarshal ledgers[%d].entries: %v", i, err)
+		}
+		ledgers = append(ledgers, decodedTailLedger{ledger: ledger, entries: entries})
+	}
+	return ledgers
+}
+
+func assertTailEntryJSON(t *testing.T, got []map[string]string, want []wantTailEntry) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Fatalf("entries len = %d, want %d", len(got), len(want))
+	}
+	for i := range want {
+		if len(got[i]) != 4 {
+			t.Fatalf("entries[%d] keys = %v, want only timestamp, summary, prompt, body", i, keys(got[i]))
+		}
+		if got[i]["timestamp"] != want[i].timestamp ||
+			got[i]["summary"] != want[i].summary ||
+			got[i]["prompt"] != want[i].prompt ||
+			got[i]["body"] != want[i].body {
+			t.Fatalf("entries[%d] = %#v, want timestamp=%q summary=%q prompt=%q body=%q", i, got[i], want[i].timestamp, want[i].summary, want[i].prompt, want[i].body)
+		}
+	}
 }
 
 func writeCLILedgerContent(t *testing.T, dir, ledger, content string) {
