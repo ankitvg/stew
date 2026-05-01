@@ -8,14 +8,9 @@ const (
 func renderManagedBlock() string {
 	return managedBlockStart + "\n" +
 		"## Stew\n\n" +
-		"This repo uses stew to maintain append-only markdown ledgers.\n\n" +
-		"Run `stew help` first to discover the CLI workflow and available commands.\n" +
-		"Run `stew full-spec` to load the full contract (stew model + all ledger specs).\n" +
-		"When a new ledger is needed, run `stew ledger new <name> --help`; then create it with `stew ledger new <name> ...`.\n" +
-		"Before writing, run `stew append <ledger> --help`; then append entries with `stew append <ledger> ...`.\n\n" +
-		"Default ledgers in this repo:\n" +
-		"- iterations — per-prompt work log\n" +
-		"- decisions — durable architectural and product decisions\n" +
+		"This repo uses stew to maintain durable project memory in append-only markdown ledgers.\n\n" +
+		"Run `stew help` to discover available commands.\n" +
+		"Run `stew full-spec` before working to load the workflow and ledger contract.\n" +
 		managedBlockEnd + "\n"
 }
 
@@ -31,22 +26,33 @@ func renderDecisionsLedger() string {
 
 func renderStewSpec() string {
 	return "# Stew Spec\n\n" +
-		"Stew stores project context as append-only markdown ledgers under `.stew/`.\n" +
-		"This file is the base model; ledger-specific requirements live in `*.spec.md` files.\n\n" +
+		"Stew stores project context as append-only markdown ledgers managed through the `stew` CLI.\n" +
+		"This file is the base model; ledger-specific requirements are included by `stew full-spec`.\n\n" +
 		"## Core Model\n\n" +
 		"A ledger has these durable properties:\n\n" +
-		"- Name: the filename stem, such as `iterations` for `.stew/iterations.md`.\n" +
-		"- Spec: `.stew/<name>.spec.md` defines the ledger's purpose, body conventions, and append threshold.\n" +
+		"- Name: the command-facing identifier, such as `iterations`.\n" +
+		"- Spec: a ledger-specific contract defines the ledger's purpose, body conventions, and append threshold.\n" +
 		"- Shared format: entries follow this base model plus the ledger-specific spec.\n" +
 		"- Append-only semantics: never edit past entries.\n" +
+		"- CLI interface: use `stew ledgers` to discover ledger names, `stew ledger tail` or `stew ledger cat` to read entries, and `stew append` to write entries. Do not inspect or edit ledger files directly.\n" +
 		"- Chronological ordering: newest entries are appended at the bottom.\n" +
 		"- Entry boundaries: each entry starts with an H2 UTC ISO 8601 timestamp and summary.\n" +
 		"- Attribution: each entry includes `**Prompt:**` for the originating prompt.\n" +
-		"- Repo affiliation: ledgers belong to the repository containing their `.stew/` directory.\n\n" +
+		"- Repo affiliation: ledgers belong to the repository where Stew is initialized.\n\n" +
 		"To add a custom ledger, run `stew ledger new <name>`. Stew commands automatically discover ledgers by their spec file.\n\n" +
 		"## Full Contract\n\n" +
-		"Run `stew full-spec` to print this file plus every `.stew/*.spec.md` file.\n" +
-		"Custom ledgers are discovered automatically when their spec files exist.\n"
+		"Run `stew full-spec` to print this file plus every ledger-specific spec.\n" +
+		"Custom ledgers are discovered automatically when they are created with `stew ledger new`.\n\n" +
+		"## Working With Stew\n\n" +
+		"When starting a new task or session in a repository that uses Stew:\n\n" +
+		"1. Run `stew help` to discover the available commands.\n" +
+		"2. Run `stew full-spec` to load this workflow plus every ledger-specific contract.\n" +
+		"3. Run `stew ledgers` to list writable ledger names and descriptions.\n" +
+		"4. For each discovered writable ledger, run `stew ledger tail <name> --limit 5` to load recent project memory.\n" +
+		"5. Use the tailed entries as context, but verify current repo state from the actual files before changing behavior.\n\n" +
+		"During the task, run `stew <command> --help` before using an unfamiliar write command.\n\n" +
+		"At the end of meaningful work, append entries to the appropriate ledgers according to their specs. Use `iterations` for per-prompt work logs, `decisions` for durable architectural or product decisions, and any custom ledgers when their specs say the work belongs there.\n\n" +
+		"Use Stew commands as the interface for ledger access: read with `stew ledger tail` or `stew ledger cat`, and write with `stew append`. Do not inspect or edit ledger files directly.\n"
 }
 
 func renderIterationsSpec() string {

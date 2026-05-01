@@ -82,7 +82,7 @@ func Run(opts Options) (Result, error) {
 
 	stewDir := filepath.Join(targetDir, ".stew")
 	if err := os.MkdirAll(stewDir, 0o755); err != nil {
-		return Result{}, fmt.Errorf("create .stew directory: %w", err)
+		return Result{}, fmt.Errorf("create stew metadata: %w", err)
 	}
 
 	templates := []struct {
@@ -124,11 +124,11 @@ func createIfMissing(path, body string) (FileStatus, error) {
 	if _, err := os.Stat(path); err == nil {
 		return FileStatusExists, nil
 	} else if !errors.Is(err, os.ErrNotExist) {
-		return "", fmt.Errorf("stat file %s: %w", path, err)
+		return "", fmt.Errorf("stat stew-managed file: %w", err)
 	}
 
 	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
-		return "", fmt.Errorf("write file %s: %w", path, err)
+		return "", fmt.Errorf("write stew-managed file: %w", err)
 	}
 	return FileStatusCreated, nil
 }

@@ -158,17 +158,23 @@ func TestRunFreshDirectoryCreatesStewFiles(t *testing.T) {
 		t.Fatalf("read AGENTS.md: %v", err)
 	}
 	agents := string(agentsBytes)
-	if !strings.Contains(agents, "Run `stew help` first to discover the CLI workflow") {
-		t.Fatalf("AGENTS managed block missing help-first entrypoint: %s", agents)
+	if !strings.Contains(agents, "durable project memory in append-only markdown ledgers") {
+		t.Fatalf("AGENTS managed block missing durable memory description: %s", agents)
 	}
-	if !strings.Contains(agents, "Run `stew full-spec` to load the full contract") {
+	if !strings.Contains(agents, "Run `stew help` to discover available commands.") {
+		t.Fatalf("AGENTS managed block missing help entrypoint: %s", agents)
+	}
+	if !strings.Contains(agents, "Run `stew full-spec` before working to load the workflow and ledger contract.") {
 		t.Fatalf("AGENTS managed block missing full-spec entrypoint: %s", agents)
 	}
-	if !strings.Contains(agents, "When a new ledger is needed, run `stew ledger new <name> --help`") {
-		t.Fatalf("AGENTS managed block missing ledger creation guidance: %s", agents)
+	if strings.Contains(agents, "Default ledgers in this repo:") {
+		t.Fatalf("AGENTS managed block should not list default ledgers: %s", agents)
 	}
-	if !strings.Contains(agents, "Before writing, run `stew append <ledger> --help`") {
-		t.Fatalf("AGENTS managed block missing append help guidance: %s", agents)
+	if strings.Contains(agents, "stew ledger new <name>") {
+		t.Fatalf("AGENTS managed block should not include detailed ledger creation guidance: %s", agents)
+	}
+	if strings.Contains(agents, "stew append <ledger>") {
+		t.Fatalf("AGENTS managed block should not include detailed append guidance: %s", agents)
 	}
 	if strings.Contains(agents, "Iterations entry spec:") {
 		t.Fatalf("AGENTS managed block should not list spec file paths directly: %s", agents)
@@ -179,14 +185,20 @@ func TestStewSpecDocumentsCustomLedgerPrimitive(t *testing.T) {
 	spec := renderStewSpec()
 	required := []string{
 		"A ledger has these durable properties:",
-		"- Name: the filename stem",
-		"- Spec: `.stew/<name>.spec.md` defines the ledger's purpose",
+		"- Name: the command-facing identifier",
+		"- Spec: a ledger-specific contract defines the ledger's purpose",
 		"- Append-only semantics: never edit past entries.",
+		"- CLI interface: use `stew ledgers` to discover ledger names, `stew ledger tail` or `stew ledger cat` to read entries, and `stew append` to write entries.",
 		"- Chronological ordering: newest entries are appended at the bottom.",
 		"- Entry boundaries: each entry starts with an H2 UTC ISO 8601 timestamp and summary.",
 		"- Attribution: each entry includes `**Prompt:**` for the originating prompt.",
-		"- Repo affiliation: ledgers belong to the repository containing their `.stew/` directory.",
+		"- Repo affiliation: ledgers belong to the repository where Stew is initialized.",
 		"To add a custom ledger, run `stew ledger new <name>`.",
+		"## Working With Stew",
+		"Run `stew ledgers` to list writable ledger names and descriptions.",
+		"For each discovered writable ledger, run `stew ledger tail <name> --limit 5` to load recent project memory.",
+		"At the end of meaningful work, append entries to the appropriate ledgers according to their specs.",
+		"Use Stew commands as the interface for ledger access: read with `stew ledger tail` or `stew ledger cat`, and write with `stew append`.",
 	}
 	for _, want := range required {
 		if !strings.Contains(spec, want) {

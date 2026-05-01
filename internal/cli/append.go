@@ -63,7 +63,7 @@ func runAppend(ctx cliContext, args []string) error {
 		stdinIsTTY = func() bool { return readerIsTerminal(ctx.in) }
 	}
 
-	result, err := stewappend.Run(stewappend.Options{
+	_, err = stewappend.Run(stewappend.Options{
 		TargetDir:  targetPath,
 		Ledger:     positionals[0],
 		Prompt:     prompt.value,
@@ -78,15 +78,14 @@ func runAppend(ctx cliContext, args []string) error {
 		return err
 	}
 
-	fmt.Fprintf(ctx.out, "Appended %s\n", result.LedgerPath)
+	fmt.Fprintf(ctx.out, "Appended %s\n", positionals[0])
 	return nil
 }
 
-const appendHelp = `Append a new entry to .stew/<ledger>.md.
+const appendHelp = `Append a new entry to a Stew ledger.
 
-The ledger must already be defined by .stew/<ledger>.spec.md. The reserved
-ledger name "stew" is not writable because .stew/stew.spec.md defines the
-shared model contract.
+The ledger must already be defined by a ledger spec. The reserved ledger name
+"stew" is not writable because it names the shared model contract.
 
 Stew owns the entry header, timestamp, prompt field, and separator. Supply the
 ledger name, the originating prompt, a short summary, and exactly one body

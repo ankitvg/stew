@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	ErrMissingStewDir = errors.New(".stew directory not found")
-	ErrNoSpecFiles    = errors.New("no .stew/*.spec.md files found")
+	ErrMissingStewDir = errors.New("stew is not initialized")
+	ErrNoSpecFiles    = errors.New("no stew ledger specs found")
 )
 
 type Result struct {
@@ -36,7 +36,7 @@ func Load(targetDir string) (Result, error) {
 		if errors.Is(err, os.ErrNotExist) {
 			return Result{}, fmt.Errorf("%w in %s", ErrMissingStewDir, absTarget)
 		}
-		return Result{}, fmt.Errorf("read .stew directory: %w", err)
+		return Result{}, fmt.Errorf("read stew metadata: %w", err)
 	}
 
 	specNames := make([]string, 0)
@@ -51,7 +51,7 @@ func Load(targetDir string) (Result, error) {
 	}
 
 	if len(specNames) == 0 {
-		return Result{}, fmt.Errorf("%w in %s", ErrNoSpecFiles, stewDir)
+		return Result{}, fmt.Errorf("%w in %s", ErrNoSpecFiles, absTarget)
 	}
 
 	sort.Slice(specNames, func(i, j int) bool {
@@ -73,11 +73,11 @@ func Load(targetDir string) (Result, error) {
 		absPath := filepath.Join(absTarget, relPath)
 		bytes, err := os.ReadFile(absPath)
 		if err != nil {
-			return Result{}, fmt.Errorf("read %s: %w", relPath, err)
+			return Result{}, fmt.Errorf("read %s: %w", specSourceLabel(name), err)
 		}
 
 		content := strings.TrimRight(string(bytes), "\n")
-		sections = append(sections, fmt.Sprintf("<!-- %s -->\n%s", relPath, content))
+		sections = append(sections, fmt.Sprintf("<!-- %s -->\n%s", specSourceLabel(name), content))
 		files = append(files, relPath)
 	}
 
@@ -92,4 +92,11 @@ func Load(targetDir string) (Result, error) {
 	}
 
 	return result, nil
+}
+
+func specSourceLabel(name string) string {
+	if name == "stew.spec.md" {
+		return "stew spec"
+	}
+	return strings.TrimSuffix(name, ".spec.md") + " spec"
 }

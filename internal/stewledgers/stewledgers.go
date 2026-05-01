@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	ErrMissingStewDir = errors.New(".stew directory not found")
+	ErrMissingStewDir = errors.New("stew is not initialized")
 	ErrNoLedgers      = errors.New("no writable ledgers found")
 )
 
@@ -46,7 +46,7 @@ func List(opts Options) (Result, error) {
 		if errors.Is(err, os.ErrNotExist) {
 			return Result{}, fmt.Errorf("%w in %s", ErrMissingStewDir, absTarget)
 		}
-		return Result{}, fmt.Errorf("read .stew directory: %w", err)
+		return Result{}, fmt.Errorf("read stew metadata: %w", err)
 	}
 
 	ledgers := make([]Ledger, 0)
@@ -65,7 +65,7 @@ func List(opts Options) (Result, error) {
 		specPath := filepath.Join(absTarget, specRel)
 		bytes, err := os.ReadFile(specPath)
 		if err != nil {
-			return Result{}, fmt.Errorf("read %s: %w", specRel, err)
+			return Result{}, fmt.Errorf("read ledger spec for %q: %w", name, err)
 		}
 
 		ledgers = append(ledgers, Ledger{
@@ -76,7 +76,7 @@ func List(opts Options) (Result, error) {
 	}
 
 	if len(ledgers) == 0 {
-		return Result{}, fmt.Errorf("%w in %s", ErrNoLedgers, stewDir)
+		return Result{}, fmt.Errorf("%w in %s", ErrNoLedgers, absTarget)
 	}
 
 	sort.Slice(ledgers, func(i, j int) bool {

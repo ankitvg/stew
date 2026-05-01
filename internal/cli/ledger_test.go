@@ -22,8 +22,7 @@ func TestLedgerNewCommandCreatesLedgerAndSpec(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ExecuteWithIO() error = %v", err)
 	}
-	wantOut := "Created " + filepath.Join(".stew", "plans.md") + "\n" +
-		"Created " + filepath.Join(".stew", "plans.spec.md") + "\n"
+	wantOut := "Created ledger plans\n"
 	if out.String() != wantOut {
 		t.Fatalf("stdout = %q, want %q", out.String(), wantOut)
 	}
@@ -54,7 +53,7 @@ func TestLedgerNewCommandCreatesLedgerAndSpec(t *testing.T) {
 	if err := ExecuteWithIO([]string{"full-spec"}, strings.NewReader(""), &fullSpecOut, &bytes.Buffer{}); err != nil {
 		t.Fatalf("full-spec ExecuteWithIO() error = %v", err)
 	}
-	if !strings.Contains(fullSpecOut.String(), "<!-- .stew/plans.spec.md -->") {
+	if !strings.Contains(fullSpecOut.String(), "<!-- plans spec -->") {
 		t.Fatalf("full-spec missing plans spec: %s", fullSpecOut.String())
 	}
 }
@@ -112,7 +111,7 @@ func TestLedgerCatHelpDocumentsRawOutput(t *testing.T) {
 
 	required := []string{
 		"Print a Stew ledger.",
-		"raw .stew/<ledger>.md file to stdout",
+		"raw ledger markdown to stdout",
 		"stew ledger cat iterations | grep",
 		"--path string",
 	}

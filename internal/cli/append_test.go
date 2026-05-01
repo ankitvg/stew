@@ -22,7 +22,7 @@ func TestAppendCommandAppendsMessageBody(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ExecuteWithIO() error = %v", err)
 	}
-	if got := out.String(); got != "Appended "+filepath.Join(".stew", "iterations.md")+"\n" {
+	if got := out.String(); got != "Appended iterations\n" {
 		t.Fatalf("stdout = %q", got)
 	}
 

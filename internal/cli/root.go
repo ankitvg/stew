@@ -212,7 +212,7 @@ func requiredFlags(names ...string) error {
 	return fmt.Errorf("required flag(s) %s not set", strings.Join(quoted, ", "))
 }
 
-const rootHelp = `Stew maintains append-only markdown ledgers in .stew/.
+const rootHelp = `Stew maintains append-only markdown ledgers through the stew CLI.
 
 Use Stew to give agents and humans a durable project memory:
 1. Run "stew help" to discover available commands.
@@ -233,7 +233,7 @@ Examples:
 
 Available Commands:
   append      Append an entry to a stew ledger
-  full-spec   Print the full stew contract from .stew/*.spec.md
+  full-spec   Print the full stew contract
   help        Help about any command
   init        Initialize stew context files in a repository
   ledger      Manage stew ledgers

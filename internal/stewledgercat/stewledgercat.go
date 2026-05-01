@@ -53,12 +53,12 @@ func Run(opts Options) (Result, error) {
 	specInfo, err := os.Stat(specPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return Result{}, fmt.Errorf("%w: %s not found", ErrUnknownLedger, specRel)
+			return Result{}, fmt.Errorf("%w: ledger %q is not defined", ErrUnknownLedger, ledger)
 		}
 		return Result{}, fmt.Errorf("stat ledger spec: %w", err)
 	}
 	if specInfo.IsDir() {
-		return Result{}, fmt.Errorf("%w: %s is a directory", ErrUnknownLedger, specRel)
+		return Result{}, fmt.Errorf("%w: ledger %q is not defined", ErrUnknownLedger, ledger)
 	}
 
 	ledgerRel := filepath.Join(".stew", ledger+".md")
@@ -66,17 +66,17 @@ func Run(opts Options) (Result, error) {
 	ledgerInfo, err := os.Stat(ledgerPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return Result{}, fmt.Errorf("%w: %s not found", ErrMissingLedger, ledgerRel)
+			return Result{}, fmt.Errorf("%w: ledger %q has no readable content", ErrMissingLedger, ledger)
 		}
 		return Result{}, fmt.Errorf("stat ledger: %w", err)
 	}
 	if ledgerInfo.IsDir() {
-		return Result{}, fmt.Errorf("%w: %s is a directory", ErrMissingLedger, ledgerRel)
+		return Result{}, fmt.Errorf("%w: ledger %q has no readable content", ErrMissingLedger, ledger)
 	}
 
 	bytes, err := os.ReadFile(ledgerPath)
 	if err != nil {
-		return Result{}, fmt.Errorf("read %s: %w", ledgerRel, err)
+		return Result{}, fmt.Errorf("read ledger %q: %w", ledger, err)
 	}
 
 	return Result{

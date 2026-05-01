@@ -46,9 +46,9 @@ func TestLoadSortsStewSpecFirstAndConcats(t *testing.T) {
 		}
 	}
 
-	stewIdx := strings.Index(result.Content, "<!-- .stew/stew.spec.md -->")
-	alphaIdx := strings.Index(result.Content, "<!-- .stew/alpha.spec.md -->")
-	zetaIdx := strings.Index(result.Content, "<!-- .stew/zeta.spec.md -->")
+	stewIdx := strings.Index(result.Content, "<!-- stew spec -->")
+	alphaIdx := strings.Index(result.Content, "<!-- alpha spec -->")
+	zetaIdx := strings.Index(result.Content, "<!-- zeta spec -->")
 	if stewIdx < 0 || alphaIdx < 0 || zetaIdx < 0 {
 		t.Fatalf("missing expected source markers in output: %s", result.Content)
 	}

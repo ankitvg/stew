@@ -21,8 +21,8 @@ func TestLedgersCommandListsDiscoveredLedgers(t *testing.T) {
 		t.Fatalf("ExecuteWithIO() error = %v", err)
 	}
 
-	want := "alpha  " + filepath.Join(".stew", "alpha.md") + "  Alpha description.\n" +
-		"zeta   " + filepath.Join(".stew", "zeta.md") + "   Zeta description.\n"
+	want := "alpha  Alpha description.\n" +
+		"zeta   Zeta description.\n"
 	if out.String() != want {
 		t.Fatalf("stdout = %q, want %q", out.String(), want)
 	}
@@ -38,7 +38,7 @@ func TestLedgersCommandAcceptsPathFlag(t *testing.T) {
 		t.Fatalf("ExecuteWithIO() error = %v", err)
 	}
 
-	want := "plans  " + filepath.Join(".stew", "plans.md") + "  Plan records.\n"
+	want := "plans  Plan records.\n"
 	if out.String() != want {
 		t.Fatalf("stdout = %q, want %q", out.String(), want)
 	}
@@ -49,8 +49,8 @@ func TestLedgersHelpDocumentsDiscovery(t *testing.T) {
 
 	required := []string{
 		"List available Stew ledgers.",
-		"discovers writable ledgers from .stew/*.spec.md files",
-		"excluding the",
+		"discovers writable ledgers from ledger specs",
+		"ledger name and description",
 		"stew ledgers --path /path/to/repo",
 	}
 	assertHelpContains(t, output, required)

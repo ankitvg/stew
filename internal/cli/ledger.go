@@ -123,7 +123,7 @@ func runLedgerNew(ctx cliContext, args []string) error {
 		return err
 	}
 
-	result, err := stewledger.Run(stewledger.Options{
+	_, err = stewledger.Run(stewledger.Options{
 		Name:        positionals[0],
 		Description: description,
 		Threshold:   threshold,
@@ -135,15 +135,14 @@ func runLedgerNew(ctx cliContext, args []string) error {
 		return nil
 	}
 
-	fmt.Fprintf(ctx.out, "Created %s\n", result.LedgerPath)
-	fmt.Fprintf(ctx.out, "Created %s\n", result.SpecPath)
+	fmt.Fprintf(ctx.out, "Created ledger %s\n", positionals[0])
 	return nil
 }
 
 const ledgerHelp = `Manage Stew ledgers.
 
-Stew discovers ledgers from .stew/*.spec.md files. Use "stew ledger new" when
-you need a custom append-only ledger beyond the defaults created by init.
+Stew discovers ledgers from ledger specs. Use "stew ledger new" when you need a
+custom append-only ledger beyond the defaults created by init.
 
 Usage:
   stew ledger [command]
@@ -159,8 +158,8 @@ Flags:
 
 const ledgerCatHelp = `Print a Stew ledger.
 
-The command writes the raw .stew/<ledger>.md file to stdout. Use shell pipes for
-searching or filtering, such as "stew ledger cat iterations | grep parser".
+The command writes raw ledger markdown to stdout. Use shell pipes for searching
+or filtering, such as "stew ledger cat iterations | grep parser".
 
 Usage:
   stew ledger cat <ledger> [flags]
@@ -177,8 +176,8 @@ Flags:
 
 const ledgerTailHelp = `Print recent Stew ledger entries.
 
-The command writes the last N entries from .stew/<ledger>.md to stdout. Output
-contains entries only, in file order, with no ledger title or managed marker.
+The command writes the last N entries from the ledger to stdout. Output contains
+entries only, in file order, with no ledger title or managed marker.
 
 Usage:
   stew ledger tail <ledger> [flags]
@@ -196,7 +195,7 @@ Flags:
 
 const ledgerNewHelp = `Create a custom Stew ledger in an initialized repository.
 
-The command writes .stew/<name>.md and .stew/<name>.spec.md. The filesystem
+The command creates a ledger and its matching ledger spec. The filesystem
 remains the source of truth: no registry, config, or generated code is updated.
 
 Names must use lowercase ASCII letters, digits, and single hyphens only. Supply

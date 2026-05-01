@@ -202,3 +202,95 @@ Validation:
 - `go run ./cmd/stew help ledger tail`
 
 ---
+
+## 2026-05-01T02:39:07Z — Move workflow into spec
+
+**Prompt:** PLEASE IMPLEMENT THIS PLAN: Move Stew Workflow Into `stew.spec.md`.
+
+Moved the AI-agent workflow guidance into the Stew spec and reduced AGENTS.md to a compact pointer.
+
+Changes:
+- Added `## Working With Stew` to `.stew/stew.spec.md` and `renderStewSpec()` with startup instructions to run `stew help`, `stew full-spec`, `stew ledgers`, and `stew ledger tail <name> --limit 5` for each writable ledger.
+- Updated the workflow to tell agents to use tailed entries as project memory while verifying current repo state from files, run command help before unfamiliar write commands, and append to appropriate ledgers after meaningful work.
+- Simplified `AGENTS.md` and `renderManagedBlock()` so the managed block only describes Stew durable memory and points to `stew help` plus `stew full-spec`.
+- Updated README agent-first wording to say the full spec carries the agent workflow.
+- Updated init/template tests to enforce the minimal AGENTS block and spec workflow content.
+
+Validation:
+- `go test ./...`
+- `go build ./...`
+- `go run ./cmd/stew full-spec`
+- `go run ./cmd/stew ledger tail iterations --limit 5`
+
+---
+
+## 2026-05-01T02:43:35Z — Clarify append-only writes
+
+**Prompt:** Clarify in the Stew workflow/spec that ledger paths are for discovery and reading, not direct writes.
+
+Clarified the Stew contract so ledger paths shown by `stew ledgers` cannot be mistaken for direct write targets.
+
+Changes:
+- Added a Core Model write-path bullet to `.stew/stew.spec.md` and `renderStewSpec()` saying ledger file paths are for discovery and reading, and entries must be created only with `stew append <ledger>`.
+- Added an explicit workflow warning not to update ledger markdown files directly and to run `stew append <ledger> --help` before writing.
+- Updated init/template tests to require both statements in generated specs.
+
+Validation:
+- `go test ./...`
+- `go build ./...`
+- `go run ./cmd/stew full-spec | sed -n '1,55p'`
+
+---
+
+## 2026-05-01T02:51:45Z — Hide ledger file paths
+
+**Prompt:** Revise the workflow/spec so the model uses Stew commands instead of ledger file paths.
+
+Revised the workflow and CLI surfaces so agents use Stew commands as the ledger interface instead of reasoning about ledger file paths.
+
+Changes:
+- Reworded `.stew/stew.spec.md` and `renderStewSpec()` so the core model describes command-facing ledger names and the CLI interface: `stew ledgers`, `stew ledger tail`, `stew ledger cat`, and `stew append`.
+- Updated the workflow to say `stew ledgers` lists ledger names and descriptions, not paths.
+- Changed `stew ledgers` output to omit ledger paths and print only names plus descriptions.
+- Changed `stew full-spec` source markers from path comments to logical labels such as `<!-- stew spec -->` and `<!-- decisions spec -->`.
+- Cleaned path-oriented wording from relevant command help and README command summaries.
+- Updated tests for the new output and wording.
+
+Validation:
+- `go test ./...`
+- `go build ./...`
+- `go run ./cmd/stew help | sed -n '1,35p'`
+- `go run ./cmd/stew full-spec | sed -n '1,50p'`
+- `go run ./cmd/stew ledgers`
+
+---
+
+## 2026-05-01T02:57:02Z — Smoke test
+
+**Prompt:** Smoke
+
+Body
+
+---
+
+## 2026-05-01T02:57:33Z — Hide ledger paths from CLI
+
+**Prompt:** Remove ledger paths from `stew ledgers` and ensure ledger paths are never shown through commands.
+
+Updated the CLI and docs so ledger file paths are not part of the model-facing interface.
+
+Changes:
+- Confirmed `stew ledgers` prints only ledger names and descriptions.
+- Changed `stew append` success output to `Appended <ledger>`.
+- Changed `stew ledger new` success output to `Created ledger <name>`.
+- Changed `stew init` output to summarize `Stew metadata` instead of listing managed files.
+- Reworded help text and errors across read/write commands to avoid exposing ledger/spec file paths.
+- Changed `stew full-spec` section comments to logical labels such as `<!-- stew spec -->` instead of filesystem paths.
+- Updated README and tests to describe Stew commands as the interface for ledger access.
+
+Validation:
+- `go test ./...`
+- `go build ./...`
+- smoke test in a temp repo covering `init`, `ledger new`, `append`, `ledgers`, `full-spec`, and `ledger tail`, with output checked for no `.stew/` ledger paths.
+
+---

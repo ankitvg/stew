@@ -10,7 +10,7 @@ func TestRootHelpIncludesAgentWorkflow(t *testing.T) {
 	output := executeHelp(t, "--help")
 
 	required := []string{
-		"Stew maintains append-only markdown ledgers in .stew/.",
+		"Stew maintains append-only markdown ledgers through the stew CLI.",
 		`Run "stew help" to discover available commands.`,
 		`Run "stew full-spec" to load the repository's ledger contract.`,
 		`Run "stew <command> --help" before using a command you do not know.`,
@@ -29,7 +29,7 @@ func TestLedgerHelpDocumentsCustomLedgers(t *testing.T) {
 
 	required := []string{
 		"Manage Stew ledgers.",
-		"Stew discovers ledgers from .stew/*.spec.md files.",
+		"Stew discovers ledgers from ledger specs.",
 		`Use "stew ledger new" when`,
 		"new",
 	}
@@ -41,7 +41,7 @@ func TestLedgerNewHelpDocumentsCreationContract(t *testing.T) {
 
 	required := []string{
 		"Create a custom Stew ledger in an initialized repository.",
-		"The command writes .stew/<name>.md and .stew/<name>.spec.md.",
+		"The command creates a ledger and its matching ledger spec.",
 		"Names must use lowercase ASCII letters, digits, and single hyphens only.",
 		"omitted, the spec contains TODO guidance",
 		"stew ledger new plans --description",
@@ -56,8 +56,8 @@ func TestAppendHelpDocumentsBodySourcesAndExamples(t *testing.T) {
 	output := executeHelp(t, "append", "--help")
 
 	required := []string{
-		"Append a new entry to .stew/<ledger>.md.",
-		"The ledger must already be defined by .stew/<ledger>.spec.md.",
+		"Append a new entry to a Stew ledger.",
+		"The ledger must already be defined by a ledger spec.",
 		"source: piped stdin, -m/--message, or -F/--file.",
 		"printf 'Implemented the change and ran go test ./...'",
 		"stew append iterations --prompt 'Small fix' --summary 'Record small fix' -m",
@@ -70,8 +70,8 @@ func TestInitHelpDocumentsManagedAgentsBlock(t *testing.T) {
 	output := executeHelp(t, "init", "--help")
 
 	required := []string{
-		"creates the .stew/ directory, the default ledger/spec files, and",
-		"the managed Stew block in AGENTS.md",
+		"creates Stew metadata, the default ledgers/specs, and",
+		"Stew block in AGENTS.md",
 		`agents should use "stew help" for CLI discovery`,
 		`Run "stew full-spec"`,
 		"to load the repository's ledger contract",
@@ -84,9 +84,9 @@ func TestFullSpecHelpDocumentsContractLoading(t *testing.T) {
 
 	required := []string{
 		"Print the full Stew contract for the target repository.",
-		"The output starts with .stew/stew.spec.md",
+		"The output starts with the base Stew spec",
 		"Agents should run this before",
-		"ledger's expected entry shape",
+		"expected entry shape",
 	}
 	assertHelpContains(t, output, required)
 }

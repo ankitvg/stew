@@ -4,8 +4,8 @@ Stew is a small CLI for maintaining append-only markdown ledgers in a repository
 It is meant to give humans and coding agents a durable project memory without a
 database, service, or generated registry.
 
-Stew stores ledgers under `.stew/`. Each ledger has a markdown file for entries
-and a matching `.spec.md` file that explains when and how to write to it.
+Stew exposes project memory through named ledgers. Each ledger has entries and a
+matching spec that explains when and how to write to it.
 
 ## Agent-First Usage
 
@@ -13,10 +13,11 @@ Stew is designed so most day-to-day usage is handled by an AI coding agent, not
 by a human memorizing commands.
 
 The setup loop is intentionally small: install the CLI, then run `stew init` in
-a repo, or ask your coding agent to run it. Init creates `.stew/` and adds a
+a repo, or ask your coding agent to run it. Init creates Stew metadata and adds a
 managed Stew block to `AGENTS.md`, so future agent sessions know to run
-`stew help`, load `stew full-spec`, append iteration or decision entries, and
-create new ledgers when the project needs more structured memory.
+`stew help` and load `stew full-spec`. The full spec carries the agent workflow:
+discover ledgers, tail recent entries for context, and append to the appropriate
+ledgers after meaningful work.
 
 After that, the user usually only needs to ask the agent to keep project context
 up to date. The CLI remains documented and scriptable for anyone who wants to
@@ -118,10 +119,10 @@ stew append plans \
 
 ## Commands
 
-- `stew init` creates `.stew/`, default ledgers, and a managed `AGENTS.md` block.
+- `stew init` creates Stew metadata, default ledgers, and a managed `AGENTS.md` block.
 - `stew help` prints the CLI workflow and available commands.
-- `stew full-spec` prints `.stew/stew.spec.md` plus every custom ledger spec.
-- `stew ledgers` lists discovered writable ledgers with paths and descriptions.
+- `stew full-spec` prints the base Stew spec plus every custom ledger spec.
+- `stew ledgers` lists discovered writable ledger names and descriptions.
 - `stew ledger cat <ledger>` prints a ledger's raw markdown content.
 - `stew ledger tail <ledger>` prints recent entries from a ledger.
 - `stew append <ledger>` appends a timestamped entry to a known ledger.

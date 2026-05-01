@@ -35,16 +35,15 @@ func runLedgers(ctx cliContext, args []string) error {
 
 	writer := tabwriter.NewWriter(ctx.out, 0, 0, 2, ' ', 0)
 	for _, ledger := range result.Ledgers {
-		fmt.Fprintf(writer, "%s\t%s\t%s\n", ledger.Name, ledger.LedgerPath, ledger.Description)
+		fmt.Fprintf(writer, "%s\t%s\n", ledger.Name, ledger.Description)
 	}
 	return writer.Flush()
 }
 
 const ledgersHelp = `List available Stew ledgers.
 
-Stew discovers writable ledgers from .stew/*.spec.md files, excluding the
-shared .stew/stew.spec.md model contract. The output lists each ledger name,
-entry file path, and description.
+Stew discovers writable ledgers from ledger specs, excluding the shared model
+contract. The output lists each ledger name and description.
 
 Usage:
   stew ledgers [flags]

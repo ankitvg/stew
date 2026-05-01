@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	ErrMissingStewDir = errors.New(".stew directory not found")
+	ErrMissingStewDir = errors.New("stew is not initialized")
 	ErrInvalidName    = errors.New("invalid ledger name")
 	ErrLedgerExists   = errors.New("ledger already exists")
 )
@@ -50,10 +50,10 @@ func Run(opts Options) (Result, error) {
 		if errors.Is(err, os.ErrNotExist) {
 			return Result{}, fmt.Errorf("%w in %s; run `stew init` first", ErrMissingStewDir, targetDir)
 		}
-		return Result{}, fmt.Errorf("stat .stew directory: %w", err)
+		return Result{}, fmt.Errorf("stat stew metadata: %w", err)
 	}
 	if !stewInfo.IsDir() {
-		return Result{}, fmt.Errorf("%w: %s is not a directory; run `stew init` first", ErrMissingStewDir, stewDir)
+		return Result{}, fmt.Errorf("%w in %s; run `stew init` first", ErrMissingStewDir, targetDir)
 	}
 
 	name, err := validateName(opts.Name)
@@ -66,18 +66,18 @@ func Run(opts Options) (Result, error) {
 	ledgerPath := filepath.Join(targetDir, ledgerRel)
 	specPath := filepath.Join(targetDir, specRel)
 
-	if err := ensureMissing(ledgerPath, ledgerRel); err != nil {
+	if err := ensureMissing(ledgerPath, "ledger", name); err != nil {
 		return Result{}, err
 	}
-	if err := ensureMissing(specPath, specRel); err != nil {
+	if err := ensureMissing(specPath, "ledger spec", name); err != nil {
 		return Result{}, err
 	}
 
 	if err := os.WriteFile(ledgerPath, []byte(renderLedger(name)), 0o644); err != nil {
-		return Result{}, fmt.Errorf("write %s: %w", ledgerRel, err)
+		return Result{}, fmt.Errorf("write ledger %q: %w", name, err)
 	}
 	if err := os.WriteFile(specPath, []byte(renderSpec(name, opts.Description, opts.Threshold)), 0o644); err != nil {
-		return Result{}, fmt.Errorf("write %s: %w", specRel, err)
+		return Result{}, fmt.Errorf("write ledger spec for %q: %w", name, err)
 	}
 
 	return Result{
@@ -137,15 +137,15 @@ var reservedNames = map[string]bool{
 	"stews":   true,
 }
 
-func ensureMissing(path, relPath string) error {
+func ensureMissing(path, kind, name string) error {
 	_, err := os.Stat(path)
 	if err == nil {
-		return fmt.Errorf("%w: %s already exists", ErrLedgerExists, relPath)
+		return fmt.Errorf("%w: %s for %q already exists", ErrLedgerExists, kind, name)
 	}
 	if errors.Is(err, os.ErrNotExist) {
 		return nil
 	}
-	return fmt.Errorf("stat %s: %w", relPath, err)
+	return fmt.Errorf("stat %s for %q: %w", kind, name, err)
 }
 
 func renderLedger(name string) string {

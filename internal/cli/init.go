@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"io"
-	"sort"
 
 	"github.com/ankitvg/stew/internal/stewinit"
 )
@@ -49,15 +48,7 @@ func runInit(ctx cliContext, args []string) error {
 	}
 
 	fmt.Fprintf(ctx.out, "Initialized stew in %s\n", result.TargetDir)
-
-	paths := make([]string, 0, len(result.FileStatuses))
-	for path := range result.FileStatuses {
-		paths = append(paths, path)
-	}
-	sort.Strings(paths)
-	for _, path := range paths {
-		fmt.Fprintf(ctx.out, "[%s] %s\n", result.FileStatuses[path], path)
-	}
+	fmt.Fprintf(ctx.out, "[%s] Stew metadata\n", aggregateFileStatus(result.FileStatuses))
 
 	if !noAgentsMD {
 		fmt.Fprintf(ctx.out, "[%s] AGENTS.md\n", result.AgentsStatus)
@@ -66,12 +57,26 @@ func runInit(ctx cliContext, args []string) error {
 	return nil
 }
 
+func aggregateFileStatus(statuses map[string]stewinit.FileStatus) stewinit.FileStatus {
+	for _, status := range statuses {
+		if status == stewinit.FileStatusCreated {
+			return stewinit.FileStatusCreated
+		}
+	}
+	for _, status := range statuses {
+		if status == stewinit.FileStatusUpdated {
+			return stewinit.FileStatusUpdated
+		}
+	}
+	return stewinit.FileStatusExists
+}
+
 const initHelp = `Initialize Stew in a repository.
 
-This command creates the .stew/ directory, the default ledger/spec files, and
-the managed Stew block in AGENTS.md. It is safe to run more than once: existing
-ledger files are preserved, and the managed AGENTS.md block is inserted or
-updated without replacing content outside the block.
+This command creates Stew metadata, the default ledgers/specs, and the managed
+Stew block in AGENTS.md. It is safe to run more than once: existing ledgers are
+preserved, and the managed AGENTS.md block is inserted or updated without
+replacing content outside the block.
 
 After init, agents should use "stew help" for CLI discovery. Run "stew full-spec"
 to load the repository's ledger contract.

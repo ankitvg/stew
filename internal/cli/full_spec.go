@@ -37,10 +37,10 @@ func runFullSpec(ctx cliContext, args []string) error {
 
 const fullSpecHelp = `Print the full Stew contract for the target repository.
 
-The output starts with .stew/stew.spec.md, then includes every other
-.stew/*.spec.md file in deterministic order. Agents should run this before
-writing ledger entries so they know the repository's append-only rules and each
-ledger's expected entry shape.
+The output starts with the base Stew spec, then includes every ledger-specific
+spec in deterministic order. Agents should run this before writing ledger
+entries so they know the repository's append-only rules and each ledger's
+expected entry shape.
 
 Usage:
   stew full-spec [flags]

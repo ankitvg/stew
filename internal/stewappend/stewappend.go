@@ -78,12 +78,12 @@ func Run(opts Options) (Result, error) {
 	specInfo, err := os.Stat(specPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return Result{}, fmt.Errorf("%w: .stew/%s.spec.md not found", ErrUnknownLedger, ledger)
+			return Result{}, fmt.Errorf("%w: ledger %q is not defined", ErrUnknownLedger, ledger)
 		}
 		return Result{}, fmt.Errorf("stat ledger spec: %w", err)
 	}
 	if specInfo.IsDir() {
-		return Result{}, fmt.Errorf("%w: .stew/%s.spec.md is a directory", ErrUnknownLedger, ledger)
+		return Result{}, fmt.Errorf("%w: ledger %q is not defined", ErrUnknownLedger, ledger)
 	}
 
 	body, err := resolveBody(opts)
