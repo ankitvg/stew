@@ -30,13 +30,13 @@ func runAppend(ctx cliContext, args []string) error {
 	flags.Var(&filePath, "F", "Read the entry body from a file")
 
 	positionals, err := parseInterspersedFlags(flags, args, map[string]flagKind{
-		"path":    stringFlag,
-		"prompt":  stringFlag,
-		"summary": stringFlag,
-		"message": stringFlag,
-		"m":       stringFlag,
-		"file":    stringFlag,
-		"F":       stringFlag,
+		"path":    argFlag,
+		"prompt":  argFlag,
+		"summary": argFlag,
+		"message": argFlag,
+		"m":       argFlag,
+		"file":    argFlag,
+		"F":       argFlag,
 	})
 	if err != nil {
 		return err

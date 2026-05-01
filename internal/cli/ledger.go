@@ -38,7 +38,7 @@ func runLedgerCat(ctx cliContext, args []string) error {
 	flags.StringVar(&targetPath, "path", ".", "Target directory")
 
 	positionals, err := parseInterspersedFlags(flags, args, map[string]flagKind{
-		"path": stringFlag,
+		"path": argFlag,
 	})
 	if err != nil {
 		return err
@@ -73,8 +73,8 @@ func runLedgerTail(ctx cliContext, args []string) error {
 	flags.IntVar(&limit, "limit", 10, "Number of entries to print")
 
 	positionals, err := parseInterspersedFlags(flags, args, map[string]flagKind{
-		"path":  stringFlag,
-		"limit": stringFlag,
+		"path":  argFlag,
+		"limit": argFlag,
 	})
 	if err != nil {
 		return err
@@ -112,8 +112,8 @@ func runLedgerNew(ctx cliContext, args []string) error {
 	flags.BoolVar(&quiet, "quiet", false, "Suppress standard output")
 
 	positionals, err := parseInterspersedFlags(flags, args, map[string]flagKind{
-		"description": stringFlag,
-		"threshold":   stringFlag,
+		"description": argFlag,
+		"threshold":   argFlag,
 		"quiet":       boolFlag,
 	})
 	if err != nil {

@@ -18,7 +18,7 @@ func runFullSpec(ctx cliContext, args []string) error {
 	flags.StringVar(&targetPath, "path", ".", "Target directory")
 
 	positionals, err := parseInterspersedFlags(flags, args, map[string]flagKind{
-		"path": stringFlag,
+		"path": argFlag,
 	})
 	if err != nil {
 		return err

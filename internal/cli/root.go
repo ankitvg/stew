@@ -114,7 +114,7 @@ func runHelp(ctx cliContext, args []string) error {
 type flagKind int
 
 const (
-	stringFlag flagKind = iota
+	argFlag flagKind = iota
 	boolFlag
 )
 
@@ -161,7 +161,7 @@ func parseInterspersedFlags(flags *flag.FlagSet, args []string, specs map[string
 		}
 
 		flagArgs = append(flagArgs, arg)
-		if kind == stringFlag && !strings.Contains(arg, "=") {
+		if kind == argFlag && !strings.Contains(arg, "=") {
 			if i+1 >= len(args) {
 				return nil, fmt.Errorf("flag needs an argument: -%s", name)
 			}

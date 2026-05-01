@@ -23,7 +23,7 @@ func runInit(ctx cliContext, args []string) error {
 	flags.BoolVar(&quiet, "quiet", false, "Suppress standard output")
 
 	positionals, err := parseInterspersedFlags(flags, args, map[string]flagKind{
-		"path":         stringFlag,
+		"path":         argFlag,
 		"no-agents-md": boolFlag,
 		"quiet":        boolFlag,
 	})
