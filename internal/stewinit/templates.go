@@ -39,13 +39,13 @@ func renderStewSpec() string {
 		"- Attribution: each entry includes `**Prompt:**` for the originating prompt.\n" +
 		"- Repo affiliation: ledgers belong to the repository where Stew is initialized.\n\n" +
 		"## Working With Stew\n\n" +
-		"Required startup context workflow: after `AGENTS.md` tells you to run\n" +
-		"`stew full-spec`, follow these steps before planning or editing for a new task\n" +
-		"or session:\n\n" +
-		"This loads recent decisions and implementation notes so you can aim repo\n" +
+		"Stew loads recent decisions and implementation notes so you can aim repo\n" +
 		"inspection at the relevant files sooner instead of scanning blindly. Treat the\n" +
 		"ledger context as a starting map, then confirm behavior against the current\n" +
 		"source before making changes.\n\n" +
+		"Required startup context workflow: after `AGENTS.md` tells you to run\n" +
+		"`stew full-spec`, follow these steps before planning or editing for a new task\n" +
+		"or session:\n\n" +
 		"1. Run `stew ledgers` to list writable ledger names and descriptions.\n" +
 		"2. Run `stew ledger tail --all --limit 5` to load recent project memory.\n" +
 		"3. Use the tailed entries as context, then verify current repo state from the actual files before changing behavior.\n\n" +

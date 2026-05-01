@@ -18,14 +18,14 @@ A ledger has these durable properties:
 
 ## Working With Stew
 
-Required startup context workflow: after `AGENTS.md` tells you to run
-`stew full-spec`, follow these steps before planning or editing for a new task
-or session:
-
-This loads recent decisions and implementation notes so you can aim repo
+Stew loads recent decisions and implementation notes so you can aim repo
 inspection at the relevant files sooner instead of scanning blindly. Treat the
 ledger context as a starting map, then confirm behavior against the current
 source before making changes.
+
+Required startup context workflow: after `AGENTS.md` tells you to run
+`stew full-spec`, follow these steps before planning or editing for a new task
+or session:
 
 1. Run `stew ledgers` to list writable ledger names and descriptions.
 2. Run `stew ledger tail --all --limit 5` to load recent project memory.
