@@ -64,6 +64,8 @@ func runRoot(ctx cliContext, args []string) error {
 		return runFullSpec(ctx, args[1:])
 	case "ledger":
 		return runLedger(ctx, args[1:])
+	case "ledgers":
+		return runLedgers(ctx, args[1:])
 	case "version":
 		return runVersion(ctx, args[1:])
 	default:
@@ -90,6 +92,8 @@ func runHelp(ctx cliContext, args []string) error {
 			return nil
 		}
 		fmt.Fprint(ctx.out, ledgerHelp)
+	case "ledgers":
+		fmt.Fprint(ctx.out, ledgersHelp)
 	case "version":
 		fmt.Fprint(ctx.out, versionHelp)
 	default:
@@ -224,6 +228,7 @@ Available Commands:
   help        Help about any command
   init        Initialize stew context files in a repository
   ledger      Manage stew ledgers
+  ledgers     List available ledgers
   version     Print build version information
 
 Flags:

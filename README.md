@@ -71,6 +71,12 @@ Load the full ledger contract before writing:
 stew full-spec
 ```
 
+List available ledgers:
+
+```sh
+stew ledgers
+```
+
 Append a work-log entry:
 
 ```sh
@@ -102,6 +108,7 @@ stew append plans \
 - `stew init` creates `.stew/`, default ledgers, and a managed `AGENTS.md` block.
 - `stew help` prints the CLI workflow and available commands.
 - `stew full-spec` prints `.stew/stew.spec.md` plus every custom ledger spec.
+- `stew ledgers` lists discovered writable ledgers with paths and descriptions.
 - `stew append <ledger>` appends a timestamped entry to a known ledger.
 - `stew ledger new <name>` creates a custom ledger and spec.
 - `stew version` prints build metadata.

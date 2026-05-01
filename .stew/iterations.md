@@ -141,3 +141,22 @@ Added the Apache License 2.0 text for the stew CLI and documented the license in
 Updated README.md with a Default Ledgers section explaining the purpose of the default iterations and decisions ledgers, including when routine implementation notes versus durable decisions belong in each. Validated with go test ./....
 
 ---
+
+## 2026-05-01T01:44:35Z — Implement ledgers command
+
+**Prompt:** PLEASE IMPLEMENT THIS PLAN: Add `stew ledgers` command listing ledger names, locations, and descriptions.
+
+Implemented a read-only `stew ledgers` top-level command.
+
+Changes:
+- Added `internal/stewledgers` to discover writable ledgers from `.stew/*.spec.md`, exclude `.stew/stew.spec.md`, derive `.stew/<name>.md`, sort by ledger name, and flatten the first prose paragraph after each spec H1 into the description.
+- Added `internal/cli/ledgers.go`, root dispatch, help support, and tab-aligned headerless output for `stew ledgers [--path <dir>]`.
+- Updated README command docs to include `stew ledgers`.
+- Added unit tests for ledger discovery and CLI tests for listing, `--path`, help, and root help coverage.
+
+Validation:
+- `go test ./...`
+- `go build ./...`
+- `go run ./cmd/stew ledgers`
+
+---
