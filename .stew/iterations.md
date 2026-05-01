@@ -376,3 +376,27 @@ Replaced stew ledger tail --json content-string output with entry-aware JSON. Si
 Removed the synthetic tail entry identifier from the internal entry model, JSON renderer, tests, and README example. Tail JSON now includes only timestamp, summary, prompt, and body for each entry; durable entry identifiers are left for a future markdown-level primitive. Validation: go test ./..., make build, and ./dist/stew ledger tail iterations --limit 1 --json with no id key.
 
 ---
+
+## 2026-05-01T04:25:14Z — Clarify startup workflow spec
+
+**Prompt:** Make Stew startup workflow explicit and remove redundant spec text
+
+Made the Stew startup workflow more explicit by rewriting Working With Stew as a required context collection workflow after AGENTS.md points agents to full-spec. Removed the redundant Full Contract section and removed the iterations timestamp note because timestamps are produced by stew append. Updated the init template and tests so generated repos preserve the clearer contract. Validation: go test ./..., make build, and ./dist/stew full-spec | sed -n '1,90p'.
+
+---
+
+## 2026-05-01T04:26:52Z — Trim stew spec details
+
+**Prompt:** Keep Stew spec lean; remove repeated CLI help details
+
+Trimmed command-help-style details from the Stew spec and init template: removed the core-model CLI interface bullet, custom-ledger command paragraph, and final repeated CLI interface sentence. Kept only durable ledger properties plus the mandatory startup context workflow and append-at-end guidance. Updated tests to assert the leaner contract and forbid the removed details. Validation: go test ./..., make build, and ./dist/stew full-spec | sed -n '1,70p'.
+
+---
+
+## 2026-05-01T04:37:11Z — Add startup workflow rationale
+
+**Prompt:** Explain why the Stew startup workflow exists before listing steps
+
+Added rationale to Working With Stew explaining that startup ledger reads provide recent decisions and implementation notes to guide targeted repo inspection before editing. Mirrored the wording in the init template and updated tests to preserve it. Validation: go test ./..., make build, and ./dist/stew full-spec | sed -n '1,55p'.
+
+---

@@ -34,25 +34,23 @@ func renderStewSpec() string {
 		"- Spec: a ledger-specific contract defines the ledger's purpose, body conventions, and append threshold.\n" +
 		"- Shared format: entries follow this base model plus the ledger-specific spec.\n" +
 		"- Append-only semantics: never edit past entries.\n" +
-		"- CLI interface: use `stew ledgers` to discover ledger names, `stew ledger tail` or `stew ledger cat` to read entries, and `stew append` to write entries. Do not inspect or edit ledger files directly.\n" +
 		"- Chronological ordering: newest entries are appended at the bottom.\n" +
 		"- Entry boundaries: each entry starts with an H2 UTC ISO 8601 timestamp and summary.\n" +
 		"- Attribution: each entry includes `**Prompt:**` for the originating prompt.\n" +
 		"- Repo affiliation: ledgers belong to the repository where Stew is initialized.\n\n" +
-		"To add a custom ledger, run `stew ledger new <name>`. Stew commands automatically discover ledgers by their spec file.\n\n" +
-		"## Full Contract\n\n" +
-		"Run `stew full-spec` to print this file plus every ledger-specific spec.\n" +
-		"Custom ledgers are discovered automatically when they are created with `stew ledger new`.\n\n" +
 		"## Working With Stew\n\n" +
-		"When starting a new task or session in a repository that uses Stew:\n\n" +
-		"1. Run `stew help` to discover the available commands.\n" +
-		"2. Run `stew full-spec` to load this workflow plus every ledger-specific contract.\n" +
-		"3. Run `stew ledgers` to list writable ledger names and descriptions.\n" +
-		"4. Run `stew ledger tail --all --limit 5` to load recent project memory from every discovered writable ledger.\n" +
-		"5. Use the tailed entries as context, but verify current repo state from the actual files before changing behavior.\n\n" +
+		"Required startup context workflow: after `AGENTS.md` tells you to run\n" +
+		"`stew full-spec`, follow these steps before planning or editing for a new task\n" +
+		"or session:\n\n" +
+		"This loads recent decisions and implementation notes so you can aim repo\n" +
+		"inspection at the relevant files sooner instead of scanning blindly. Treat the\n" +
+		"ledger context as a starting map, then confirm behavior against the current\n" +
+		"source before making changes.\n\n" +
+		"1. Run `stew ledgers` to list writable ledger names and descriptions.\n" +
+		"2. Run `stew ledger tail --all --limit 5` to load recent project memory.\n" +
+		"3. Use the tailed entries as context, then verify current repo state from the actual files before changing behavior.\n\n" +
 		"During the task, run `stew <command> --help` before using an unfamiliar write command.\n\n" +
-		"At the end of meaningful work, append entries to the appropriate ledgers according to their specs. Use `iterations` for per-prompt work logs, `decisions` for durable architectural or product decisions, and any custom ledgers when their specs say the work belongs there.\n\n" +
-		"Use Stew commands as the interface for ledger access: read with `stew ledger tail` or `stew ledger cat`, and write with `stew append`. Do not inspect or edit ledger files directly.\n"
+		"At the end of meaningful work, append entries to the appropriate ledgers according to their specs. Use `iterations` for per-prompt work logs, `decisions` for durable architectural or product decisions, and any custom ledgers when their specs say the work belongs there.\n"
 }
 
 func renderIterationsSpec() string {
@@ -74,7 +72,6 @@ Write for a future reader reconstructing the work, not for a reviewer.>
 
 ## Notes
 
-- Timestamp: ` + "`2026-04-26T18:32:00Z`" + `. No brackets, no abbreviations.
 - One entry per prompt. If a prompt produced no meaningful change, no entry.
 - Newest at bottom. Never edit past entries.
 `

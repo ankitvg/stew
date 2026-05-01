@@ -16,6 +16,5 @@ Write for a future reader reconstructing the work, not for a reviewer.>
 
 ## Notes
 
-- Timestamp: `2026-04-26T18:32:00Z`. No brackets, no abbreviations.
 - One entry per prompt. If a prompt produced no meaningful change, no entry.
 - Newest at bottom. Never edit past entries.

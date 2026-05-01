@@ -188,21 +188,40 @@ func TestStewSpecDocumentsCustomLedgerPrimitive(t *testing.T) {
 		"- Name: the command-facing identifier",
 		"- Spec: a ledger-specific contract defines the ledger's purpose",
 		"- Append-only semantics: never edit past entries.",
-		"- CLI interface: use `stew ledgers` to discover ledger names, `stew ledger tail` or `stew ledger cat` to read entries, and `stew append` to write entries.",
 		"- Chronological ordering: newest entries are appended at the bottom.",
 		"- Entry boundaries: each entry starts with an H2 UTC ISO 8601 timestamp and summary.",
 		"- Attribution: each entry includes `**Prompt:**` for the originating prompt.",
 		"- Repo affiliation: ledgers belong to the repository where Stew is initialized.",
-		"To add a custom ledger, run `stew ledger new <name>`.",
 		"## Working With Stew",
+		"Required startup context workflow",
+		"after `AGENTS.md` tells you to run",
+		"before planning or editing for a new task",
+		"This loads recent decisions and implementation notes",
+		"aim repo",
+		"inspection at the relevant files sooner instead of scanning blindly.",
+		"ledger context as a starting map",
+		"source before making changes.",
 		"Run `stew ledgers` to list writable ledger names and descriptions.",
-		"Run `stew ledger tail --all --limit 5` to load recent project memory from every discovered writable ledger.",
+		"Run `stew ledger tail --all --limit 5` to load recent project memory.",
+		"Use the tailed entries as context, then verify current repo state from the actual files before changing behavior.",
 		"At the end of meaningful work, append entries to the appropriate ledgers according to their specs.",
-		"Use Stew commands as the interface for ledger access: read with `stew ledger tail` or `stew ledger cat`, and write with `stew append`.",
 	}
 	for _, want := range required {
 		if !strings.Contains(spec, want) {
 			t.Fatalf("stew spec missing %q: %s", want, spec)
+		}
+	}
+	for _, forbidden := range []string{
+		"## Full Contract",
+		"Run `stew help` to discover the available commands.",
+		"Run `stew full-spec` to load this workflow plus every ledger-specific contract.",
+		"- CLI interface:",
+		"To add a custom ledger, run `stew ledger new <name>`.",
+		"Stew commands automatically discover ledgers by their spec file.",
+		"Use Stew commands as the interface for ledger access:",
+	} {
+		if strings.Contains(spec, forbidden) {
+			t.Fatalf("stew spec should not include %q: %s", forbidden, spec)
 		}
 	}
 }
