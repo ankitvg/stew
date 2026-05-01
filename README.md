@@ -84,6 +84,12 @@ stew ledger cat iterations
 stew ledger cat iterations | grep 'Prompt'
 ```
 
+Print recent ledger entries:
+
+```sh
+stew ledger tail iterations --limit 5
+```
+
 Append a work-log entry:
 
 ```sh
@@ -117,6 +123,7 @@ stew append plans \
 - `stew full-spec` prints `.stew/stew.spec.md` plus every custom ledger spec.
 - `stew ledgers` lists discovered writable ledgers with paths and descriptions.
 - `stew ledger cat <ledger>` prints a ledger's raw markdown content.
+- `stew ledger tail <ledger>` prints recent entries from a ledger.
 - `stew append <ledger>` appends a timestamped entry to a known ledger.
 - `stew ledger new <name>` creates a custom ledger and spec.
 - `stew version` prints build metadata.

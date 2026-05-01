@@ -5,6 +5,7 @@ import (
 
 	"github.com/ankitvg/stew/internal/stewledger"
 	"github.com/ankitvg/stew/internal/stewledgercat"
+	"github.com/ankitvg/stew/internal/stewledgertail"
 )
 
 func runLedger(ctx cliContext, args []string) error {
@@ -16,6 +17,8 @@ func runLedger(ctx cliContext, args []string) error {
 	switch args[0] {
 	case "cat":
 		return runLedgerCat(ctx, args[1:])
+	case "tail":
+		return runLedgerTail(ctx, args[1:])
 	case "new":
 		return runLedgerNew(ctx, args[1:])
 	default:
@@ -47,6 +50,43 @@ func runLedgerCat(ctx cliContext, args []string) error {
 	result, err := stewledgercat.Run(stewledgercat.Options{
 		TargetDir: targetPath,
 		Ledger:    positionals[0],
+	})
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprint(ctx.out, result.Content)
+	return nil
+}
+
+func runLedgerTail(ctx cliContext, args []string) error {
+	if wantsHelp(args) {
+		fmt.Fprint(ctx.out, ledgerTailHelp)
+		return nil
+	}
+
+	var targetPath string
+	var limit int
+
+	flags := newFlagSet("ledger tail")
+	flags.StringVar(&targetPath, "path", ".", "Target directory")
+	flags.IntVar(&limit, "limit", 10, "Number of entries to print")
+
+	positionals, err := parseInterspersedFlags(flags, args, map[string]flagKind{
+		"path":  stringFlag,
+		"limit": stringFlag,
+	})
+	if err != nil {
+		return err
+	}
+	if err := exactArgs(positionals, 1); err != nil {
+		return err
+	}
+
+	result, err := stewledgertail.Run(stewledgertail.Options{
+		TargetDir: targetPath,
+		Ledger:    positionals[0],
+		Limit:     limit,
 	})
 	if err != nil {
 		return err
@@ -111,6 +151,7 @@ Usage:
 Available Commands:
   cat         Print a stew ledger
   new         Create a custom stew ledger
+  tail        Print recent ledger entries
 
 Flags:
   -h, --help   help for ledger
@@ -131,6 +172,25 @@ Examples:
 
 Flags:
   -h, --help          help for cat
+      --path string   Target directory (default ".")
+`
+
+const ledgerTailHelp = `Print recent Stew ledger entries.
+
+The command writes the last N entries from .stew/<ledger>.md to stdout. Output
+contains entries only, in file order, with no ledger title or managed marker.
+
+Usage:
+  stew ledger tail <ledger> [flags]
+
+Examples:
+  stew ledger tail iterations
+  stew ledger tail iterations --limit 5
+  stew ledger tail decisions --path /path/to/repo --limit 2
+
+Flags:
+  -h, --help          help for tail
+      --limit int     Number of entries to print (default 10)
       --path string   Target directory (default ".")
 `
 

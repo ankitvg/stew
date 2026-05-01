@@ -92,6 +92,9 @@ func runHelp(ctx cliContext, args []string) error {
 			case "cat":
 				fmt.Fprint(ctx.out, ledgerCatHelp)
 				return nil
+			case "tail":
+				fmt.Fprint(ctx.out, ledgerTailHelp)
+				return nil
 			case "new":
 				fmt.Fprint(ctx.out, ledgerNewHelp)
 				return nil
