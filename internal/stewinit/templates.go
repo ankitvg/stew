@@ -8,36 +8,28 @@ const (
 func renderManagedBlock() string {
 	return managedBlockStart + "\n" +
 		"## Stew\n\n" +
-		"This repo uses stew to maintain durable project memory in append-only markdown ledgers.\n\n" +
+		"This repo uses stew to maintain durable project memory in append-only markdown ledger entries.\n\n" +
 		"Run `stew help` to discover available commands.\n" +
 		"Run `stew full-spec` before working to load the workflow and ledger contract.\n" +
 		managedBlockEnd + "\n"
 }
 
-func renderIterationsLedger() string {
-	return "# Iterations\n\n" +
-		"<!-- Managed by stew -->\n"
-}
-
-func renderDecisionsLedger() string {
-	return "# Decisions\n\n" +
-		"<!-- Managed by stew -->\n"
-}
-
 func renderStewSpec() string {
 	return "# Stew Spec\n\n" +
-		"Stew stores project context as append-only markdown ledgers managed through the `stew` CLI.\n" +
+		"Stew stores project context as named ledgers with append-only markdown entry files managed through the `stew` CLI.\n" +
 		"This file is the base model; ledger-specific requirements are included by `stew full-spec`.\n\n" +
 		"## Core Model\n\n" +
 		"A ledger has these durable properties:\n\n" +
 		"- Name: the command-facing identifier, such as `iterations`.\n" +
 		"- Spec: a ledger-specific contract defines the ledger's purpose, body conventions, and append threshold.\n" +
+		"- Storage: each entry is its own markdown file under `.stew/ledgers/<ledger>/`; specs stay at `.stew/<ledger>.spec.md`.\n" +
 		"- Shared format: entries follow this base model plus the ledger-specific spec.\n" +
-		"- Append-only semantics: never edit past entries.\n" +
-		"- Chronological ordering: newest entries are appended at the bottom.\n" +
+		"- Append-only semantics: never edit past entry files.\n" +
+		"- Chronological ordering: entry filenames begin with a compact UTC timestamp and sort oldest-to-newest.\n" +
 		"- Entry boundaries: each entry starts with an H2 UTC ISO 8601 timestamp and summary.\n" +
 		"- Attribution: each entry includes `**Prompt:**` for the originating prompt.\n" +
 		"- Repo affiliation: ledgers belong to the repository where Stew is initialized.\n\n" +
+		"Older repositories with `.stew/<ledger>.md` files must be upgraded explicitly with `stew migrate atomic-entries`.\n\n" +
 		"## Working With Stew\n\n" +
 		"Stew loads recent decisions and implementation notes so you can aim repo\n" +
 		"inspection at the relevant files sooner instead of scanning blindly. Treat the\n" +

@@ -1,6 +1,6 @@
 # Stew Spec
 
-Stew stores project context as append-only markdown ledgers managed through the `stew` CLI.
+Stew stores project context as named ledgers with append-only markdown entry files managed through the `stew` CLI.
 This file is the base model; ledger-specific requirements are included by `stew full-spec`.
 
 ## Core Model
@@ -9,12 +9,15 @@ A ledger has these durable properties:
 
 - Name: the command-facing identifier, such as `iterations`.
 - Spec: a ledger-specific contract defines the ledger's purpose, body conventions, and append threshold.
+- Storage: each entry is its own markdown file under `.stew/ledgers/<ledger>/`; specs stay at `.stew/<ledger>.spec.md`.
 - Shared format: entries follow this base model plus the ledger-specific spec.
-- Append-only semantics: never edit past entries.
-- Chronological ordering: newest entries are appended at the bottom.
+- Append-only semantics: never edit past entry files.
+- Chronological ordering: entry filenames begin with a compact UTC timestamp and sort oldest-to-newest.
 - Entry boundaries: each entry starts with an H2 UTC ISO 8601 timestamp and summary.
 - Attribution: each entry includes `**Prompt:**` for the originating prompt.
 - Repo affiliation: ledgers belong to the repository where Stew is initialized.
+
+Older repositories with `.stew/<ledger>.md` files must be upgraded explicitly with `stew migrate atomic-entries`.
 
 ## Working With Stew
 

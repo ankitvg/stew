@@ -8,7 +8,8 @@ import (
 )
 
 func TestRunReadsExactLedgerContent(t *testing.T) {
-	tmp := setupLedger(t, "iterations", "# Iterations\n\n<!-- Managed by stew -->\n\n## Entry\n")
+	content := "## 2026-05-01T00:00:01Z — Entry\n\n**Prompt:** Test\n\nBody\n\n---\n"
+	tmp := setupLedger(t, "iterations", content)
 
 	result, err := Run(Options{
 		TargetDir: tmp,
@@ -20,24 +21,25 @@ func TestRunReadsExactLedgerContent(t *testing.T) {
 	if result.TargetDir != tmp {
 		t.Fatalf("TargetDir = %q, want %q", result.TargetDir, tmp)
 	}
-	if result.LedgerPath != filepath.Join(".stew", "iterations.md") {
+	if result.LedgerPath != filepath.Join(".stew", "ledgers", "iterations") {
 		t.Fatalf("LedgerPath = %q", result.LedgerPath)
 	}
-	want := "# Iterations\n\n<!-- Managed by stew -->\n\n## Entry\n"
+	want := content
 	if result.Content != want {
 		t.Fatalf("Content = %q, want %q", result.Content, want)
 	}
 }
 
 func TestRunSupportsDefaultTargetDir(t *testing.T) {
-	tmp := setupLedger(t, "decisions", "# Decisions\n")
+	content := "## 2026-05-01T00:00:01Z — Decision\n\n**Prompt:** Test\n\nBody\n\n---\n"
+	tmp := setupLedger(t, "decisions", content)
 	chdirForLedgerCatTest(t, tmp)
 
 	result, err := Run(Options{Ledger: "decisions"})
 	if err != nil {
 		t.Fatalf("Run() error = %v", err)
 	}
-	if result.Content != "# Decisions\n" {
+	if result.Content != content {
 		t.Fatalf("Content = %q", result.Content)
 	}
 }
@@ -62,7 +64,7 @@ func TestRunRejectsMissingLedgerFile(t *testing.T) {
 }
 
 func TestRunRejectsInvalidLedgerNames(t *testing.T) {
-	tmp := setupLedger(t, "iterations", "# Iterations\n")
+	tmp := setupLedger(t, "iterations", "")
 	cases := []string{
 		"",
 		" iterations",
@@ -98,11 +100,14 @@ func TestRunRejectsDirectoryPaths(t *testing.T) {
 		}
 	})
 
-	t.Run("ledger directory", func(t *testing.T) {
+	t.Run("ledger storage file", func(t *testing.T) {
 		tmp := setupStewDir(t)
 		writeFile(t, filepath.Join(tmp, ".stew", "plans.spec.md"), "# Plans Spec\n")
-		if err := os.Mkdir(filepath.Join(tmp, ".stew", "plans.md"), 0o755); err != nil {
-			t.Fatalf("mkdir ledger dir: %v", err)
+		if err := os.MkdirAll(filepath.Join(tmp, ".stew", "ledgers"), 0o755); err != nil {
+			t.Fatalf("mkdir ledgers dir: %v", err)
+		}
+		if err := os.WriteFile(filepath.Join(tmp, ".stew", "ledgers", "plans"), []byte("not a dir"), 0o644); err != nil {
+			t.Fatalf("write ledger storage file: %v", err)
 		}
 
 		_, err := Run(Options{TargetDir: tmp, Ledger: "plans"})
@@ -116,7 +121,13 @@ func setupLedger(t *testing.T, ledger, content string) string {
 	t.Helper()
 	tmp := setupStewDir(t)
 	writeFile(t, filepath.Join(tmp, ".stew", ledger+".spec.md"), "# Spec\n")
-	writeFile(t, filepath.Join(tmp, ".stew", ledger+".md"), content)
+	entryDir := filepath.Join(tmp, ".stew", "ledgers", ledger)
+	if err := os.MkdirAll(entryDir, 0o755); err != nil {
+		t.Fatalf("mkdir ledger storage: %v", err)
+	}
+	if content != "" {
+		writeFile(t, filepath.Join(entryDir, "2026-05-01T000001Z-entry.md"), content)
+	}
 	return tmp
 }
 

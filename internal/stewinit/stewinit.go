@@ -91,9 +91,7 @@ func Run(opts Options) (Result, error) {
 	}{
 		{relPath: filepath.Join(".stew", "config.toml"), body: renderConfig(createdAt, username)},
 		{relPath: filepath.Join(".stew", "stew.spec.md"), body: renderStewSpec()},
-		{relPath: filepath.Join(".stew", "iterations.md"), body: renderIterationsLedger()},
 		{relPath: filepath.Join(".stew", "iterations.spec.md"), body: renderIterationsSpec()},
-		{relPath: filepath.Join(".stew", "decisions.md"), body: renderDecisionsLedger()},
 		{relPath: filepath.Join(".stew", "decisions.spec.md"), body: renderDecisionsSpec()},
 	}
 
@@ -103,6 +101,15 @@ func Run(opts Options) (Result, error) {
 			return Result{}, err
 		}
 		result.FileStatuses[file.relPath] = status
+	}
+
+	for _, ledger := range []string{"iterations", "decisions"} {
+		relPath := filepath.Join(".stew", "ledgers", ledger)
+		status, err := createLedgerStorageIfMissing(targetDir, ledger)
+		if err != nil {
+			return Result{}, err
+		}
+		result.FileStatuses[relPath] = status
 	}
 
 	if opts.NoAgentsMD {
@@ -118,6 +125,34 @@ func Run(opts Options) (Result, error) {
 	result.AgentsStatus = agentsStatus
 
 	return result, nil
+}
+
+func createLedgerStorageIfMissing(targetDir, ledger string) (FileStatus, error) {
+	dirPath := filepath.Join(targetDir, ".stew", "ledgers", ledger)
+	info, err := os.Stat(dirPath)
+	if err == nil {
+		if !info.IsDir() {
+			return "", fmt.Errorf("ledger storage is not a directory: %s", dirPath)
+		}
+		return FileStatusExists, nil
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		return "", fmt.Errorf("stat ledger storage: %w", err)
+	}
+
+	legacyPath := filepath.Join(targetDir, ".stew", ledger+".md")
+	if legacyInfo, err := os.Stat(legacyPath); err == nil {
+		if !legacyInfo.IsDir() {
+			return FileStatusSkipped, nil
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return "", fmt.Errorf("stat legacy ledger: %w", err)
+	}
+
+	if err := os.MkdirAll(dirPath, 0o755); err != nil {
+		return "", fmt.Errorf("create ledger storage: %w", err)
+	}
+	return FileStatusCreated, nil
 }
 
 func createIfMissing(path, body string) (FileStatus, error) {

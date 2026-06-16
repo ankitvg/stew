@@ -122,10 +122,10 @@ func TestRunFreshDirectoryCreatesStewFiles(t *testing.T) {
 	required := []string{
 		filepath.Join(".stew", "config.toml"),
 		filepath.Join(".stew", "stew.spec.md"),
-		filepath.Join(".stew", "iterations.md"),
 		filepath.Join(".stew", "iterations.spec.md"),
-		filepath.Join(".stew", "decisions.md"),
 		filepath.Join(".stew", "decisions.spec.md"),
+		filepath.Join(".stew", "ledgers", "iterations"),
+		filepath.Join(".stew", "ledgers", "decisions"),
 	}
 
 	for _, rel := range required {
@@ -158,7 +158,7 @@ func TestRunFreshDirectoryCreatesStewFiles(t *testing.T) {
 		t.Fatalf("read AGENTS.md: %v", err)
 	}
 	agents := string(agentsBytes)
-	if !strings.Contains(agents, "durable project memory in append-only markdown ledgers") {
+	if !strings.Contains(agents, "durable project memory in append-only markdown ledger entries") {
 		t.Fatalf("AGENTS managed block missing durable memory description: %s", agents)
 	}
 	if !strings.Contains(agents, "Run `stew help` to discover available commands.") {
@@ -181,17 +181,47 @@ func TestRunFreshDirectoryCreatesStewFiles(t *testing.T) {
 	}
 }
 
+func TestRunDoesNotCreateAtomicStorageOverLegacyLedger(t *testing.T) {
+	tmp := t.TempDir()
+	stewDir := filepath.Join(tmp, ".stew")
+	if err := os.MkdirAll(stewDir, 0o755); err != nil {
+		t.Fatalf("mkdir .stew: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(stewDir, "iterations.md"), []byte("# Iterations\n"), 0o644); err != nil {
+		t.Fatalf("write legacy ledger: %v", err)
+	}
+
+	result, err := Run(Options{
+		TargetDir:  tmp,
+		NoAgentsMD: true,
+		GitRepoChecker: func(string) error {
+			return nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	if result.FileStatuses[filepath.Join(".stew", "ledgers", "iterations")] != FileStatusSkipped {
+		t.Fatalf("iterations storage status = %q, want skipped", result.FileStatuses[filepath.Join(".stew", "ledgers", "iterations")])
+	}
+	if _, err := os.Stat(filepath.Join(stewDir, "ledgers", "iterations")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("iterations storage should not be created over legacy ledger, stat err = %v", err)
+	}
+}
+
 func TestStewSpecDocumentsCustomLedgerPrimitive(t *testing.T) {
 	spec := renderStewSpec()
 	required := []string{
 		"A ledger has these durable properties:",
 		"- Name: the command-facing identifier",
 		"- Spec: a ledger-specific contract defines the ledger's purpose",
-		"- Append-only semantics: never edit past entries.",
-		"- Chronological ordering: newest entries are appended at the bottom.",
+		"- Storage: each entry is its own markdown file under `.stew/ledgers/<ledger>/`",
+		"- Append-only semantics: never edit past entry files.",
+		"- Chronological ordering: entry filenames begin with a compact UTC timestamp",
 		"- Entry boundaries: each entry starts with an H2 UTC ISO 8601 timestamp and summary.",
 		"- Attribution: each entry includes `**Prompt:**` for the originating prompt.",
 		"- Repo affiliation: ledgers belong to the repository where Stew is initialized.",
+		"Older repositories with `.stew/<ledger>.md` files must be upgraded explicitly with `stew migrate atomic-entries`.",
 		"## Working With Stew",
 		"Stew loads recent decisions and implementation notes",
 		"aim repo",

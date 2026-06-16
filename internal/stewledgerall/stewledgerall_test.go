@@ -7,13 +7,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ankitvg/stew/internal/stewentry"
 	"github.com/ankitvg/stew/internal/stewledgercat"
 )
 
 func TestCatUsesDiscoveredLedgerOrder(t *testing.T) {
 	tmp := setupAllStewDir(t)
-	writeAllLedger(t, tmp, "zeta", "# Zeta\n")
-	writeAllLedger(t, tmp, "alpha", "# Alpha\n")
+	zeta := allEntry("2026-05-01T00:00:02Z", "Zeta")
+	alpha := allEntry("2026-05-01T00:00:01Z", "Alpha")
+	writeAllLedger(t, tmp, "zeta", zeta)
+	writeAllLedger(t, tmp, "alpha", alpha)
 
 	result, err := Cat(Options{TargetDir: tmp})
 	if err != nil {
@@ -23,7 +26,7 @@ func TestCatUsesDiscoveredLedgerOrder(t *testing.T) {
 	if got, want := sectionNames(result.Sections), []string{"alpha", "zeta"}; strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Fatalf("section names = %#v, want %#v", got, want)
 	}
-	if result.Sections[0].Content != "# Alpha\n" || result.Sections[1].Content != "# Zeta\n" {
+	if result.Sections[0].Content != alpha || result.Sections[1].Content != zeta {
 		t.Fatalf("sections = %#v", result.Sections)
 	}
 }
@@ -61,7 +64,7 @@ func TestTailAppliesLimitPerLedger(t *testing.T) {
 
 func TestTailIncludesEmptyKnownLedgerSection(t *testing.T) {
 	tmp := setupAllStewDir(t)
-	writeAllLedger(t, tmp, "alpha", "# Alpha\n\n<!-- Managed by stew -->\n")
+	writeAllLedger(t, tmp, "alpha", "")
 
 	result, err := Tail(Options{TargetDir: tmp, Limit: 5})
 	if err != nil {
@@ -104,7 +107,7 @@ func TestTailFailsWhenDiscoveredLedgerContentIsMissing(t *testing.T) {
 
 func TestTailRejectsInvalidLimit(t *testing.T) {
 	tmp := setupAllStewDir(t)
-	writeAllLedger(t, tmp, "alpha", "# Alpha\n")
+	writeAllLedger(t, tmp, "alpha", "")
 
 	_, err := Tail(Options{TargetDir: tmp, Limit: 0})
 	if err == nil || !strings.Contains(err.Error(), "invalid limit") {
@@ -124,8 +127,18 @@ func setupAllStewDir(t *testing.T) string {
 func writeAllLedger(t *testing.T, dir, ledger, content string) {
 	t.Helper()
 	writeAllSpec(t, dir, ledger)
-	if err := os.WriteFile(filepath.Join(dir, ".stew", ledger+".md"), []byte(content), 0o644); err != nil {
-		t.Fatalf("write ledger %s: %v", ledger, err)
+	entryDir := filepath.Join(dir, ".stew", "ledgers", ledger)
+	if err := os.MkdirAll(entryDir, 0o755); err != nil {
+		t.Fatalf("mkdir ledger %s: %v", ledger, err)
+	}
+	for _, entry := range stewentry.Parse(content) {
+		name, err := stewentry.Filename(entry.Timestamp, entry.Summary)
+		if err != nil {
+			t.Fatalf("entry filename: %v", err)
+		}
+		if err := os.WriteFile(filepath.Join(entryDir, name), []byte(strings.TrimRight(entry.Content, "\n")+"\n"), 0o644); err != nil {
+			t.Fatalf("write entry %s: %v", ledger, err)
+		}
 	}
 }
 
