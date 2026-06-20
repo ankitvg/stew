@@ -112,6 +112,13 @@ func Run(opts Options) (Result, error) {
 		result.FileStatuses[relPath] = status
 	}
 
+	linksRelPath := filepath.Join(".stew", "links")
+	linksStatus, err := createLinksStorageIfMissing(targetDir)
+	if err != nil {
+		return Result{}, err
+	}
+	result.FileStatuses[linksRelPath] = linksStatus
+
 	if opts.NoAgentsMD {
 		result.AgentsStatus = FileStatusSkipped
 		return result, nil
@@ -151,6 +158,24 @@ func createLedgerStorageIfMissing(targetDir, ledger string) (FileStatus, error) 
 
 	if err := os.MkdirAll(dirPath, 0o755); err != nil {
 		return "", fmt.Errorf("create ledger storage: %w", err)
+	}
+	return FileStatusCreated, nil
+}
+
+func createLinksStorageIfMissing(targetDir string) (FileStatus, error) {
+	dirPath := filepath.Join(targetDir, ".stew", "links")
+	info, err := os.Stat(dirPath)
+	if err == nil {
+		if !info.IsDir() {
+			return "", fmt.Errorf("links storage is not a directory: %s", dirPath)
+		}
+		return FileStatusExists, nil
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		return "", fmt.Errorf("stat links storage: %w", err)
+	}
+	if err := os.MkdirAll(dirPath, 0o755); err != nil {
+		return "", fmt.Errorf("create links storage: %w", err)
 	}
 	return FileStatusCreated, nil
 }

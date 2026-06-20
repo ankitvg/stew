@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ankitvg/stew/internal/stewref"
 )
 
 func TestRunAppendsFormattedEntryFromMessage(t *testing.T) {
@@ -169,6 +171,126 @@ func TestRunUsesNumericSuffixForSameSecondCollision(t *testing.T) {
 	}
 }
 
+func TestRunCreatesLinksForLinkedFiles(t *testing.T) {
+	tmp := setupLedger(t, "iterations")
+	writeAppendTestFile(t, filepath.Join(tmp, "internal", "cli", "ledger.go"), "package cli\n")
+	writeAppendTestFile(t, filepath.Join(tmp, "internal", "stewappend", "stewappend.go"), "package stewappend\n")
+
+	result, err := Run(Options{
+		TargetDir:  tmp,
+		Ledger:     "iterations",
+		Prompt:     "Prompt",
+		Summary:    "Link files",
+		Message:    "Body",
+		MessageSet: true,
+		LinkFiles: []string{
+			`./internal\cli/ledger.go`,
+			"internal/stewappend/stewappend.go",
+		},
+		Now:        fixedNow,
+		NewEntryID: staticEntryID("abc234"),
+	})
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+
+	if len(result.Links) != 2 {
+		t.Fatalf("Links len = %d, want 2", len(result.Links))
+	}
+	wantEntryRef := "entry:iterations/2026-04-26T183923Z-abc234-link-files.md"
+	if result.Links[0].Source != wantEntryRef || result.Links[0].Target != "file:internal/cli/ledger.go" || result.Links[0].CreatedAt != "2026-04-26T18:39:23Z" {
+		t.Fatalf("Links[0] = %#v", result.Links[0])
+	}
+	if result.Links[1].Source != wantEntryRef || result.Links[1].Target != "file:internal/stewappend/stewappend.go" || result.Links[1].CreatedAt != "2026-04-26T18:39:23Z" {
+		t.Fatalf("Links[1] = %#v", result.Links[1])
+	}
+
+	linkFiles, err := os.ReadDir(filepath.Join(tmp, ".stew", "links"))
+	if err != nil {
+		t.Fatalf("read links dir: %v", err)
+	}
+	if len(linkFiles) != 2 {
+		t.Fatalf("link files len = %d, want 2", len(linkFiles))
+	}
+}
+
+func TestRunDedupesLinkedFiles(t *testing.T) {
+	tmp := setupLedger(t, "iterations")
+	writeAppendTestFile(t, filepath.Join(tmp, "internal", "cli", "ledger.go"), "package cli\n")
+
+	result, err := Run(Options{
+		TargetDir:  tmp,
+		Ledger:     "iterations",
+		Prompt:     "Prompt",
+		Summary:    "Link files",
+		Message:    "Body",
+		MessageSet: true,
+		LinkFiles: []string{
+			"internal/cli/ledger.go",
+			"./internal/cli/ledger.go",
+		},
+		Now:        fixedNow,
+		NewEntryID: staticEntryID("abc234"),
+	})
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	if len(result.Links) != 1 {
+		t.Fatalf("Links len = %d, want 1", len(result.Links))
+	}
+}
+
+func TestRunRejectsMissingLinkedFileBeforeCreatingEntry(t *testing.T) {
+	tmp := setupLedger(t, "iterations")
+
+	_, err := Run(Options{
+		TargetDir:  tmp,
+		Ledger:     "iterations",
+		Prompt:     "Prompt",
+		Summary:    "Missing link",
+		Message:    "Body",
+		MessageSet: true,
+		LinkFiles:  []string{"internal/cli/missing.go"},
+		Now:        fixedNow,
+		NewEntryID: staticEntryID("abc234"),
+	})
+	if !errors.Is(err, stewref.ErrMissingTarget) {
+		t.Fatalf("Run() error = %v, want ErrMissingTarget", err)
+	}
+	if got := entryFileCount(t, tmp, "iterations"); got != 0 {
+		t.Fatalf("entry files len = %d, want 0", got)
+	}
+}
+
+func TestRunKeepsEntryWhenLinkWriteFails(t *testing.T) {
+	tmp := setupLedger(t, "iterations")
+	writeAppendTestFile(t, filepath.Join(tmp, "internal", "cli", "ledger.go"), "package cli\n")
+	if err := os.WriteFile(filepath.Join(tmp, ".stew", "links"), []byte("not a dir"), 0o644); err != nil {
+		t.Fatalf("write links file: %v", err)
+	}
+
+	_, err := Run(Options{
+		TargetDir:  tmp,
+		Ledger:     "iterations",
+		Prompt:     "Prompt",
+		Summary:    "Link failure",
+		Message:    "Body",
+		MessageSet: true,
+		LinkFiles:  []string{"internal/cli/ledger.go"},
+		Now:        fixedNow,
+		NewEntryID: staticEntryID("abc234"),
+	})
+	if err == nil {
+		t.Fatalf("expected link write error")
+	}
+	if !strings.Contains(err.Error(), "create links for entry:iterations/2026-04-26T183923Z-abc234-link-failure.md") {
+		t.Fatalf("error = %v, want created entry ref context", err)
+	}
+	if got := entryFileCount(t, tmp, "iterations"); got != 1 {
+		t.Fatalf("entry files len = %d, want 1", got)
+	}
+}
+
 func TestRunRejectsInvalidGeneratedEntryID(t *testing.T) {
 	tmp := setupLedger(t, "iterations")
 
@@ -327,4 +449,23 @@ func staticEntryID(id string) func() (string, error) {
 	return func() (string, error) {
 		return id, nil
 	}
+}
+
+func writeAppendTestFile(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatalf("mkdir %s: %v", filepath.Dir(path), err)
+	}
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("write %s: %v", path, err)
+	}
+}
+
+func entryFileCount(t *testing.T, dir, ledger string) int {
+	t.Helper()
+	entries, err := os.ReadDir(filepath.Join(dir, ".stew", "ledgers", ledger))
+	if err != nil {
+		t.Fatalf("read entries: %v", err)
+	}
+	return len(entries)
 }
