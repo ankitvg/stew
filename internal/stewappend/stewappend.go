@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ankitvg/stew/internal/stewentry"
+	"github.com/ankitvg/stew/internal/stewref"
 )
 
 var (
@@ -41,6 +42,7 @@ type Options struct {
 type Result struct {
 	TargetDir  string
 	EntryPath  string
+	EntryRef   string
 	LedgerPath string
 }
 
@@ -122,10 +124,16 @@ func Run(opts Options) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
+	entryFileName := filepath.Base(entryPath)
+	entryRef, err := stewref.Entry(ledger, entryFileName)
+	if err != nil {
+		return Result{}, fmt.Errorf("build entry ref: %w", err)
+	}
 
 	return Result{
 		TargetDir:  targetDir,
-		EntryPath:  filepath.Join(".stew", "ledgers", ledger, filepath.Base(entryPath)),
+		EntryPath:  filepath.Join(".stew", "ledgers", ledger, entryFileName),
+		EntryRef:   entryRef.String(),
 		LedgerPath: filepath.Join(".stew", "ledgers", ledger),
 	}, nil
 }

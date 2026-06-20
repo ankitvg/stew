@@ -12,6 +12,11 @@ one markdown file per entry under `.stew/ledgers/<ledger>/`, with timestamped
 filenames that sort oldest-to-newest. Newly generated filenames include short
 Stew-generated ids before the summary slug.
 
+Stew also has an internal ref vocabulary for addressing project objects. It
+currently supports ledger entry refs, such as
+`entry:decisions/2026-06-20T191722Z-5cxsdb-use-ids-for-generated-entry-filenames.md`,
+and repo file refs, such as `file:internal/stewentry/stewentry.go`.
+
 ## Agent-First Usage
 
 Stew is designed so most day-to-day usage is handled by an AI coding agent, not

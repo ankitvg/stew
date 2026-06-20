@@ -34,6 +34,10 @@ func TestRunAppendsFormattedEntryFromMessage(t *testing.T) {
 	if result.EntryPath != wantEntryPath {
 		t.Fatalf("EntryPath = %q, want %q", result.EntryPath, wantEntryPath)
 	}
+	wantEntryRef := "entry:iterations/2026-04-26T110507Z-k7p3qx-add-append-command.md"
+	if result.EntryRef != wantEntryRef {
+		t.Fatalf("EntryRef = %q, want %q", result.EntryRef, wantEntryRef)
+	}
 
 	got := readFile(t, filepath.Join(tmp, result.EntryPath))
 	want := "## 2026-04-26T11:05:07Z — Add append command\n\n" +
