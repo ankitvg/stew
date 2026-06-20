@@ -66,6 +66,8 @@ func runRoot(ctx cliContext, args []string) error {
 		return runLedger(ctx, args[1:])
 	case "ledgers":
 		return runLedgers(ctx, args[1:])
+	case "link":
+		return runLink(ctx, args[1:])
 	case "migrate":
 		return runMigrate(ctx, args[1:])
 	case "version":
@@ -105,6 +107,12 @@ func runHelp(ctx cliContext, args []string) error {
 		fmt.Fprint(ctx.out, ledgerHelp)
 	case "ledgers":
 		fmt.Fprint(ctx.out, ledgersHelp)
+	case "link":
+		if len(args) > 1 && args[1] == "list" {
+			fmt.Fprint(ctx.out, linkListHelp)
+			return nil
+		}
+		fmt.Fprint(ctx.out, linkHelp)
 	case "migrate":
 		if len(args) > 1 && args[1] == "atomic-entries" {
 			fmt.Fprint(ctx.out, migrateAtomicEntriesHelp)
@@ -246,6 +254,7 @@ Available Commands:
   init        Initialize stew context files in a repository
   ledger      Manage stew ledgers
   ledgers     List available ledgers
+  link        Manage stew links
   migrate     Migrate stew metadata
   version     Print build version information
 
