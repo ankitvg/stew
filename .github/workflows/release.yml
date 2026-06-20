@@ -27,24 +27,27 @@ jobs:
       - name: Build gate
         run: go build ./...
 
-      - name: Build darwin arm64 binary
+      - name: Build release artifacts
         env:
           VERSION: ${{ github.ref_name }}
           COMMIT: ${{ github.sha }}
         run: |
-          mkdir -p dist/stew_darwin_arm64
           BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          go build \
-            -trimpath \
-            -ldflags "-s -w -X github.com/ankitvg/stew/internal/version.Version=${VERSION} -X github.com/ankitvg/stew/internal/version.Commit=${COMMIT} -X github.com/ankitvg/stew/internal/version.Date=${BUILD_DATE}" \
-            -o dist/stew_darwin_arm64/stew \
-            ./cmd/stew
-
-      - name: Package artifacts
-        env:
-          VERSION: ${{ github.ref_name }}
-        run: |
-          tar -C dist/stew_darwin_arm64 -czf "dist/stew_${VERSION}_darwin_arm64.tar.gz" stew
+          while read -r GOOS GOARCH; do
+            OUTDIR="dist/stew_${GOOS}_${GOARCH}"
+            mkdir -p "${OUTDIR}"
+            GOOS="${GOOS}" GOARCH="${GOARCH}" CGO_ENABLED=0 go build \
+              -trimpath \
+              -ldflags "-s -w -X github.com/ankitvg/stew/internal/version.Version=${VERSION} -X github.com/ankitvg/stew/internal/version.Commit=${COMMIT} -X github.com/ankitvg/stew/internal/version.Date=${BUILD_DATE}" \
+              -o "${OUTDIR}/stew" \
+              ./cmd/stew
+            tar -C "${OUTDIR}" -czf "dist/stew_${VERSION}_${GOOS}_${GOARCH}.tar.gz" stew
+          done <<'TARGETS'
+          darwin arm64
+          darwin amd64
+          linux arm64
+          linux amd64
+          TARGETS
           sha256sum dist/*.tar.gz > dist/checksums.txt
 
       - name: Publish release
