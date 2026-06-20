@@ -40,6 +40,10 @@ func renderStewSpec() string {
 		"file:internal/stewentry/stewentry.go\n" +
 		"```\n\n" +
 		"JSON tail output includes entry refs for returned entries.\n\n" +
+		"## Links\n\n" +
+		"Links are append-only relationships between two refs. A link has a source ref, a target ref, and a creation timestamp.\n\n" +
+		"Stew stores links as JSON files under `.stew/links/`. V1 links have no kind field.\n\n" +
+		"`stew append --link-file <repo-relative-path>` creates links from the new entry ref to file refs. `stew link list <ref>` lists links where the ref is the source or target.\n\n" +
 		"## Working With Stew\n\n" +
 		"Stew loads recent decisions and implementation notes so you can aim repo\n" +
 		"inspection at the relevant files sooner instead of scanning blindly. Treat the\n" +

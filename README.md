@@ -18,6 +18,10 @@ supports ledger entry refs, such as
 and repo file refs, such as `file:internal/stewentry/stewentry.go`. JSON tail
 output includes entry refs for returned entries.
 
+Links are append-only relationships between refs. They are stored as JSON files
+under `.stew/links/`; v1 links connect a source ref to a target ref without a
+kind field.
+
 ## Agent-First Usage
 
 Stew is designed so most day-to-day usage is handled by an AI coding agent, not
@@ -165,6 +169,25 @@ stew append iterations \
   --json
 ```
 
+Link a new entry to repo files:
+
+```sh
+stew append iterations \
+  --prompt 'Fix parser edge case' \
+  --summary 'Fix parser edge case' \
+  --message 'Implemented the parser change and ran go test ./...' \
+  --link-file internal/parser.go \
+  --link-file internal/parser_test.go \
+  --json
+```
+
+List links for an entry or file ref:
+
+```sh
+stew link list file:internal/parser.go
+stew link list entry:iterations/2026-05-01T035338Z-k7p3qx-add-tail-json-output.md --json
+```
+
 Migrate an older repo from monolithic `.stew/<ledger>.md` files to atomic entry
 files:
 
@@ -198,7 +221,8 @@ stew append plans \
 - `stew ledgers` lists discovered writable ledger names and descriptions; use `--json` for machine-readable output.
 - `stew ledger cat <ledger>` prints one ledger's concatenated entry markdown; `--all` prints every ledger under name sections.
 - `stew ledger tail <ledger>` prints recent entries from one ledger; `--all` prints recent entries from every ledger, and `--json` prints machine-readable output.
-- `stew append <ledger>` appends a timestamped entry to a known ledger; use `--json` to print its entry ref.
+- `stew append <ledger>` appends a timestamped entry to a known ledger; use `--json` to print its entry ref and `--link-file` to link the entry to repo files.
+- `stew link list <ref>` lists links where a ref is the source or target.
 - `stew ledger new <name>` creates custom ledger storage and a spec.
 - `stew migrate atomic-entries` splits legacy monolithic ledger files into atomic entry files.
 - `stew version` prints build metadata.

@@ -35,6 +35,14 @@ file:internal/stewentry/stewentry.go
 
 JSON tail output includes entry refs for returned entries.
 
+## Links
+
+Links are append-only relationships between two refs. A link has a source ref, a target ref, and a creation timestamp.
+
+Stew stores links as JSON files under `.stew/links/`. V1 links have no kind field.
+
+`stew append --link-file <repo-relative-path>` creates links from the new entry ref to file refs. `stew link list <ref>` lists links where the ref is the source or target.
+
 ## Working With Stew
 
 Stew loads recent decisions and implementation notes so you can aim repo

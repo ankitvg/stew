@@ -126,6 +126,7 @@ func TestRunFreshDirectoryCreatesStewFiles(t *testing.T) {
 		filepath.Join(".stew", "decisions.spec.md"),
 		filepath.Join(".stew", "ledgers", "iterations"),
 		filepath.Join(".stew", "ledgers", "decisions"),
+		filepath.Join(".stew", "links"),
 	}
 
 	for _, rel := range required {
@@ -230,6 +231,13 @@ func TestStewSpecDocumentsCustomLedgerPrimitive(t *testing.T) {
 		"entry:decisions/2026-06-20T191722Z-5cxsdb-use-ids-for-generated-entry-filenames.md",
 		"file:internal/stewentry/stewentry.go",
 		"JSON tail output includes entry refs for returned entries.",
+		"## Links",
+		"Links are append-only relationships between two refs.",
+		"source ref, a target ref, and a creation timestamp.",
+		"Stew stores links as JSON files under `.stew/links/`.",
+		"V1 links have no kind field.",
+		"`stew append --link-file <repo-relative-path>` creates links from the new entry ref to file refs.",
+		"`stew link list <ref>` lists links where the ref is the source or target.",
 		"## Working With Stew",
 		"Stew loads recent decisions and implementation notes",
 		"aim repo",

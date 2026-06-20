@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "createdAt": "2026-06-20T22:11:54Z",
+  "source": "entry:iterations/2026-06-20T221154Z-6n7xx3-implement-v1-links.md",
+  "target": "file:internal/cli/link.go"
+}
