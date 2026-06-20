@@ -19,6 +19,7 @@ func runAppend(ctx cliContext, args []string) error {
 	var summary trackedString
 	var message trackedString
 	var filePath trackedString
+	var linkFiles trackedStrings
 	var jsonOutput bool
 
 	flags := newFlagSet("append")
@@ -30,16 +31,18 @@ func runAppend(ctx cliContext, args []string) error {
 	flags.Var(&message, "m", "Use the given text as the entry body")
 	flags.Var(&filePath, "file", "Read the entry body from a file")
 	flags.Var(&filePath, "F", "Read the entry body from a file")
+	flags.Var(&linkFiles, "link-file", "Link the new entry to a repo file")
 
 	positionals, err := parseInterspersedFlags(flags, args, map[string]flagKind{
-		"json":    boolFlag,
-		"path":    argFlag,
-		"prompt":  argFlag,
-		"summary": argFlag,
-		"message": argFlag,
-		"m":       argFlag,
-		"file":    argFlag,
-		"F":       argFlag,
+		"json":      boolFlag,
+		"path":      argFlag,
+		"prompt":    argFlag,
+		"summary":   argFlag,
+		"message":   argFlag,
+		"m":         argFlag,
+		"file":      argFlag,
+		"F":         argFlag,
+		"link-file": argFlag,
 	})
 	if err != nil {
 		return err
@@ -74,6 +77,7 @@ func runAppend(ctx cliContext, args []string) error {
 		Message:    message.value,
 		MessageSet: message.changed,
 		FilePath:   filePath.value,
+		LinkFiles:  linkFiles.values,
 		Stdin:      stdin,
 		StdinIsTTY: stdinIsTTY,
 	})
@@ -82,18 +86,40 @@ func runAppend(ctx cliContext, args []string) error {
 	}
 
 	if jsonOutput {
-		return encodeJSON(ctx.out, appendJSONResponse{
+		response := appendJSONResponse{
 			Ledger:   positionals[0],
 			EntryRef: result.EntryRef,
-		})
+		}
+		for _, link := range result.Links {
+			response.Links = append(response.Links, linkJSON{
+				Source:    link.Source,
+				Target:    link.Target,
+				CreatedAt: link.CreatedAt,
+			})
+		}
+		return encodeJSON(ctx.out, response)
 	}
 	fmt.Fprintf(ctx.out, "Appended %s\n", positionals[0])
 	return nil
 }
 
 type appendJSONResponse struct {
-	Ledger   string `json:"ledger"`
-	EntryRef string `json:"entryRef"`
+	Ledger   string     `json:"ledger"`
+	EntryRef string     `json:"entryRef"`
+	Links    []linkJSON `json:"links,omitempty"`
+}
+
+type trackedStrings struct {
+	values []string
+}
+
+func (s *trackedStrings) Set(value string) error {
+	s.values = append(s.values, value)
+	return nil
+}
+
+func (s *trackedStrings) String() string {
+	return ""
 }
 
 const appendHelp = `Append a new entry to a Stew ledger.
@@ -108,6 +134,7 @@ source: piped stdin, -m/--message, or -F/--file.
 Use "stew full-spec" to read the repository's ledger rules before appending.
 Use "stew append <ledger> --help" when you need the command contract.
 Use --json when an agent or script needs the created entry ref.
+Use --link-file to associate the new entry with one or more repo files.
 
 Usage:
   stew append <ledger> [flags]
@@ -116,11 +143,13 @@ Examples:
   printf 'Implemented the change and ran go test ./...' | stew append iterations --prompt 'Add append command' --summary 'Implement append command'
   stew append iterations --prompt 'Small fix' --summary 'Record small fix' -m 'Updated validation and ran tests.'
   stew append decisions --prompt 'Choose storage model' --summary 'Use append-only ledgers' -F decision-entry.md
+  stew append iterations --prompt 'Fix parser' --summary 'Fix parser' -m 'Updated parser.' --link-file internal/parser.go
 
 Flags:
   -F, --file string      Read the entry body from a file
   -h, --help             help for append
       --json             Print JSON output
+      --link-file value  Link the new entry to a repo file
   -m, --message string   Use the given text as the entry body
       --path string      Target directory (default ".")
       --prompt string    Originating user prompt

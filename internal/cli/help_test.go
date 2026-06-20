@@ -73,10 +73,12 @@ func TestAppendHelpDocumentsBodySourcesAndExamples(t *testing.T) {
 		"The ledger must already be defined by a ledger spec.",
 		"source: piped stdin, -m/--message, or -F/--file.",
 		"Use --json when an agent or script needs the created entry ref.",
+		"Use --link-file to associate the new entry with one or more repo files.",
 		"printf 'Implemented the change and ran go test ./...'",
 		"stew append iterations --prompt 'Small fix' --summary 'Record small fix' -m",
 		"stew append decisions --prompt 'Choose storage model' --summary 'Use append-only ledgers' -F decision-entry.md",
 		"--json",
+		"--link-file",
 	}
 	assertHelpContains(t, output, required)
 }

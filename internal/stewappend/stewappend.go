@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ankitvg/stew/internal/stewentry"
+	"github.com/ankitvg/stew/internal/stewlink"
 	"github.com/ankitvg/stew/internal/stewref"
 )
 
@@ -32,6 +33,7 @@ type Options struct {
 	Message    string
 	MessageSet bool
 	FilePath   string
+	LinkFiles  []string
 	Stdin      io.Reader
 	StdinIsTTY func() bool
 
@@ -44,6 +46,7 @@ type Result struct {
 	EntryPath  string
 	EntryRef   string
 	LedgerPath string
+	Links      []stewlink.Link
 }
 
 func Run(opts Options) (Result, error) {
@@ -113,6 +116,11 @@ func Run(opts Options) (Result, error) {
 		return Result{}, fmt.Errorf("%w: ledger %q has no atomic entries directory; run `stew migrate atomic-entries` or `stew init` for a fresh repo", ErrMissingStorage, ledger)
 	}
 
+	linkTargets, err := resolveLinkTargets(targetDir, opts.LinkFiles)
+	if err != nil {
+		return Result{}, err
+	}
+
 	now := opts.Now()
 	timestamp := stewentry.FormatTimestamp(now)
 	entry := stewentry.Render(now, opts.Summary, opts.Prompt, body)
@@ -130,11 +138,28 @@ func Run(opts Options) (Result, error) {
 		return Result{}, fmt.Errorf("build entry ref: %w", err)
 	}
 
+	links := make([]stewlink.Link, 0, len(linkTargets))
+	for _, targetRef := range linkTargets {
+		linkResult, err := stewlink.Create(stewlink.CreateOptions{
+			TargetDir: targetDir,
+			Source:    entryRef,
+			Target:    targetRef,
+			Now: func() time.Time {
+				return now
+			},
+		})
+		if err != nil {
+			return Result{}, fmt.Errorf("create links for %s: %w", entryRef.String(), err)
+		}
+		links = append(links, linkResult.Link)
+	}
+
 	return Result{
 		TargetDir:  targetDir,
 		EntryPath:  filepath.Join(".stew", "ledgers", ledger, entryFileName),
 		EntryRef:   entryRef.String(),
 		LedgerPath: filepath.Join(".stew", "ledgers", ledger),
+		Links:      links,
 	}, nil
 }
 
@@ -201,6 +226,36 @@ func resolveBody(opts Options) (string, error) {
 		}
 		return string(bytes), nil
 	}
+}
+
+func resolveLinkTargets(targetDir string, linkFiles []string) ([]stewref.Ref, error) {
+	if len(linkFiles) == 0 {
+		return nil, nil
+	}
+
+	seen := make(map[string]bool, len(linkFiles))
+	refs := make([]stewref.Ref, 0, len(linkFiles))
+	for _, linkFile := range linkFiles {
+		ref, err := stewref.File(linkFile)
+		if err != nil {
+			return nil, err
+		}
+		resolved, err := stewref.Resolve(stewref.ResolveOptions{
+			TargetDir:     targetDir,
+			Ref:           ref,
+			RequireExists: true,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("resolve link file %q: %w", linkFile, err)
+		}
+		refString := resolved.Ref.String()
+		if seen[refString] {
+			continue
+		}
+		seen[refString] = true
+		refs = append(refs, resolved.Ref)
+	}
+	return refs, nil
 }
 
 func writeEntryFile(entriesDir, timestamp, entryID, summary, entry string) (string, error) {
