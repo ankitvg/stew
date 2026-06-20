@@ -22,6 +22,7 @@ func TestRunAppendsFormattedEntryFromMessage(t *testing.T) {
 		Now: func() time.Time {
 			return time.Date(2026, 4, 26, 12, 5, 7, 123, time.FixedZone("UTC+1", 3600))
 		},
+		NewEntryID: staticEntryID("k7p3qx"),
 	})
 	if err != nil {
 		t.Fatalf("Run() error = %v", err)
@@ -29,7 +30,7 @@ func TestRunAppendsFormattedEntryFromMessage(t *testing.T) {
 	if result.LedgerPath != filepath.Join(".stew", "ledgers", "iterations") {
 		t.Fatalf("LedgerPath = %q, want .stew/ledgers/iterations", result.LedgerPath)
 	}
-	wantEntryPath := filepath.Join(".stew", "ledgers", "iterations", "2026-04-26T110507Z-add-append-command.md")
+	wantEntryPath := filepath.Join(".stew", "ledgers", "iterations", "2026-04-26T110507Z-k7p3qx-add-append-command.md")
 	if result.EntryPath != wantEntryPath {
 		t.Fatalf("EntryPath = %q, want %q", result.EntryPath, wantEntryPath)
 	}
@@ -145,6 +146,7 @@ func TestRunUsesNumericSuffixForSameSecondCollision(t *testing.T) {
 		Message:    "Body",
 		MessageSet: true,
 		Now:        fixedNow,
+		NewEntryID: staticEntryID("abc234"),
 	}
 	first, err := Run(opts)
 	if err != nil {
@@ -155,11 +157,32 @@ func TestRunUsesNumericSuffixForSameSecondCollision(t *testing.T) {
 		t.Fatalf("second Run() error = %v", err)
 	}
 
-	if filepath.Base(first.EntryPath) != "2026-04-26T183923Z-same-summary.md" {
+	if filepath.Base(first.EntryPath) != "2026-04-26T183923Z-abc234-same-summary.md" {
 		t.Fatalf("first EntryPath = %q", first.EntryPath)
 	}
-	if filepath.Base(second.EntryPath) != "2026-04-26T183923Z-same-summary-2.md" {
+	if filepath.Base(second.EntryPath) != "2026-04-26T183923Z-abc234-same-summary-2.md" {
 		t.Fatalf("second EntryPath = %q", second.EntryPath)
+	}
+}
+
+func TestRunRejectsInvalidGeneratedEntryID(t *testing.T) {
+	tmp := setupLedger(t, "iterations")
+
+	_, err := Run(Options{
+		TargetDir:  tmp,
+		Ledger:     "iterations",
+		Prompt:     "Prompt",
+		Summary:    "Summary",
+		Message:    "Body",
+		MessageSet: true,
+		Now:        fixedNow,
+		NewEntryID: staticEntryID("bad-id"),
+	})
+	if err == nil {
+		t.Fatalf("expected invalid entry id error")
+	}
+	if !strings.Contains(err.Error(), "entry id") {
+		t.Fatalf("error = %v, want entry id context", err)
 	}
 }
 
@@ -294,4 +317,10 @@ func readFile(t *testing.T, path string) string {
 
 func fixedNow() time.Time {
 	return time.Date(2026, 4, 26, 18, 39, 23, 987, time.UTC)
+}
+
+func staticEntryID(id string) func() (string, error) {
+	return func() (string, error) {
+		return id, nil
+	}
 }

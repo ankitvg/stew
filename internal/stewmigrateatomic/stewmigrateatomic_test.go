@@ -18,7 +18,10 @@ func TestRunMigratesLegacyLedgersAndRemovesOldFiles(t *testing.T) {
 		legacyEntry("2026-05-01T00:00:03Z", "Use atomic entries", "decision body"),
 	))
 
-	result, err := Run(Options{TargetDir: tmp})
+	result, err := Run(Options{
+		TargetDir:  tmp,
+		NewEntryID: sequenceEntryIDs(t, "aaaaaa", "bbbbbb", "cccccc"),
+	})
 	if err != nil {
 		t.Fatalf("Run() error = %v", err)
 	}
@@ -29,11 +32,15 @@ func TestRunMigratesLegacyLedgersAndRemovesOldFiles(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(tmp, ".stew", "iterations.md")); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("iterations.md should be removed, stat err = %v", err)
 	}
-	first := readTestFile(t, filepath.Join(tmp, ".stew", "ledgers", "iterations", "2026-05-01T000001Z-first-entry.md"))
+	decision := readTestFile(t, filepath.Join(tmp, ".stew", "ledgers", "decisions", "2026-05-01T000003Z-aaaaaa-use-atomic-entries.md"))
+	if !strings.Contains(decision, "decision body") {
+		t.Fatalf("decision entry not written correctly: %s", decision)
+	}
+	first := readTestFile(t, filepath.Join(tmp, ".stew", "ledgers", "iterations", "2026-05-01T000001Z-bbbbbb-first-entry.md"))
 	if !strings.Contains(first, "first body") {
 		t.Fatalf("first entry not written correctly: %s", first)
 	}
-	second := readTestFile(t, filepath.Join(tmp, ".stew", "ledgers", "iterations", "2026-05-01T000002Z-second-entry.md"))
+	second := readTestFile(t, filepath.Join(tmp, ".stew", "ledgers", "iterations", "2026-05-01T000002Z-cccccc-second-entry.md"))
 	if !strings.Contains(second, "second body") {
 		t.Fatalf("second entry not written correctly: %s", second)
 	}
@@ -174,4 +181,18 @@ func readTestFile(t *testing.T, path string) string {
 		t.Fatalf("read %s: %v", path, err)
 	}
 	return string(bytes)
+}
+
+func sequenceEntryIDs(t *testing.T, ids ...string) func() (string, error) {
+	t.Helper()
+	index := 0
+	return func() (string, error) {
+		t.Helper()
+		if index >= len(ids) {
+			t.Fatalf("entry id requested %d time(s), only %d id(s) provided", index+1, len(ids))
+		}
+		id := ids[index]
+		index++
+		return id, nil
+	}
 }

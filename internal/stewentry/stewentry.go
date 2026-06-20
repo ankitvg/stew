@@ -1,7 +1,9 @@
 package stewentry
 
 import (
+	"crypto/rand"
 	"fmt"
+	"math/big"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,6 +19,11 @@ type Entry struct {
 }
 
 var HeadingPattern = regexp.MustCompile(`(?m)^## (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z) — (.+)$`)
+
+const (
+	IDLength   = 6
+	idAlphabet = "abcdefghijklmnopqrstuvwxyz234567"
+)
 
 func Render(now time.Time, summary, prompt, body string) string {
 	builder := &strings.Builder{}
@@ -52,6 +59,8 @@ func CompactTimestamp(timestamp string) (string, error) {
 	return parsed.UTC().Format("2006-01-02T150405Z"), nil
 }
 
+// Filename returns Stew's historical timestamp-slug filename shape. New writers
+// that create atomic entry files should use FilenameWithID instead.
 func Filename(timestamp, summary string) (string, error) {
 	compact, err := CompactTimestamp(timestamp)
 	if err != nil {
@@ -60,6 +69,20 @@ func Filename(timestamp, summary string) (string, error) {
 	return compact + "-" + Slug(summary) + ".md", nil
 }
 
+// FilenameWithID returns the filename shape used by new atomic entry writers.
+func FilenameWithID(timestamp, id, summary string) (string, error) {
+	compact, err := CompactTimestamp(timestamp)
+	if err != nil {
+		return "", err
+	}
+	if err := ValidateID(id); err != nil {
+		return "", err
+	}
+	return compact + "-" + id + "-" + Slug(summary) + ".md", nil
+}
+
+// SuffixedFilename returns Stew's historical timestamp-slug filename shape with
+// a local collision suffix. New writers should use SuffixedFilenameWithID.
 func SuffixedFilename(timestamp, summary string, suffix int) (string, error) {
 	if suffix <= 1 {
 		return Filename(timestamp, summary)
@@ -69,6 +92,48 @@ func SuffixedFilename(timestamp, summary string, suffix int) (string, error) {
 		return "", err
 	}
 	return compact + "-" + Slug(summary) + "-" + strconv.Itoa(suffix) + ".md", nil
+}
+
+// SuffixedFilenameWithID returns the id-bearing filename shape with a local
+// collision suffix when an exact path already exists.
+func SuffixedFilenameWithID(timestamp, id, summary string, suffix int) (string, error) {
+	if suffix <= 1 {
+		return FilenameWithID(timestamp, id, summary)
+	}
+	compact, err := CompactTimestamp(timestamp)
+	if err != nil {
+		return "", err
+	}
+	if err := ValidateID(id); err != nil {
+		return "", err
+	}
+	return compact + "-" + id + "-" + Slug(summary) + "-" + strconv.Itoa(suffix) + ".md", nil
+}
+
+func RandomID() (string, error) {
+	builder := strings.Builder{}
+	builder.Grow(IDLength)
+	max := big.NewInt(int64(len(idAlphabet)))
+	for i := 0; i < IDLength; i++ {
+		n, err := rand.Int(rand.Reader, max)
+		if err != nil {
+			return "", fmt.Errorf("generate entry id: %w", err)
+		}
+		builder.WriteByte(idAlphabet[n.Int64()])
+	}
+	return builder.String(), nil
+}
+
+func ValidateID(id string) error {
+	if len(id) != IDLength {
+		return fmt.Errorf("entry id must be %d characters", IDLength)
+	}
+	for _, r := range id {
+		if !strings.ContainsRune(idAlphabet, r) {
+			return fmt.Errorf("entry id must use lowercase base32 characters")
+		}
+	}
+	return nil
 }
 
 func Slug(value string) string {

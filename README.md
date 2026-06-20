@@ -9,7 +9,8 @@ matching spec that explains when and how to write to it.
 
 Ledger specs live at `.stew/<ledger>.spec.md`. Entries are stored atomically as
 one markdown file per entry under `.stew/ledgers/<ledger>/`, with timestamped
-filenames that sort oldest-to-newest.
+filenames that sort oldest-to-newest. Newly generated filenames include short
+Stew-generated ids before the summary slug.
 
 ## Agent-First Usage
 

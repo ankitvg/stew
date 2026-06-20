@@ -12,7 +12,7 @@ A ledger has these durable properties:
 - Storage: each entry is its own markdown file under `.stew/ledgers/<ledger>/`; specs stay at `.stew/<ledger>.spec.md`.
 - Shared format: entries follow this base model plus the ledger-specific spec.
 - Append-only semantics: never edit past entry files.
-- Chronological ordering: entry filenames begin with a compact UTC timestamp and sort oldest-to-newest.
+- Chronological ordering: entry filenames begin with a compact UTC timestamp and sort oldest-to-newest; newly generated filenames include a short Stew-generated id before the summary slug.
 - Entry boundaries: each entry starts with an H2 UTC ISO 8601 timestamp and summary.
 - Attribution: each entry includes `**Prompt:**` for the originating prompt.
 - Repo affiliation: ledgers belong to the repository where Stew is initialized.
