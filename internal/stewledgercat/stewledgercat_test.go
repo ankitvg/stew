@@ -28,6 +28,19 @@ func TestRunReadsExactLedgerContent(t *testing.T) {
 	if result.Content != want {
 		t.Fatalf("Content = %q, want %q", result.Content, want)
 	}
+	if len(result.EntryFiles) != 1 {
+		t.Fatalf("EntryFiles len = %d, want 1", len(result.EntryFiles))
+	}
+	entryFile := result.EntryFiles[0]
+	if entryFile.Name != "2026-05-01T000001Z-entry.md" {
+		t.Fatalf("EntryFiles[0].Name = %q", entryFile.Name)
+	}
+	if entryFile.RelPath != filepath.ToSlash(filepath.Join(".stew", "ledgers", "iterations", "2026-05-01T000001Z-entry.md")) {
+		t.Fatalf("EntryFiles[0].RelPath = %q", entryFile.RelPath)
+	}
+	if entryFile.Content != content {
+		t.Fatalf("EntryFiles[0].Content = %q, want %q", entryFile.Content, content)
+	}
 }
 
 func TestRunSupportsDefaultTargetDir(t *testing.T) {

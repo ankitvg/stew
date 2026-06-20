@@ -12,10 +12,11 @@ one markdown file per entry under `.stew/ledgers/<ledger>/`, with timestamped
 filenames that sort oldest-to-newest. Newly generated filenames include short
 Stew-generated ids before the summary slug.
 
-Stew also has an internal ref vocabulary for addressing project objects. It
-currently supports ledger entry refs, such as
+Stew also has a ref vocabulary for addressing project objects. It currently
+supports ledger entry refs, such as
 `entry:decisions/2026-06-20T191722Z-5cxsdb-use-ids-for-generated-entry-filenames.md`,
-and repo file refs, such as `file:internal/stewentry/stewentry.go`.
+and repo file refs, such as `file:internal/stewentry/stewentry.go`. JSON tail
+output includes entry refs for returned entries.
 
 ## Agent-First Usage
 
@@ -135,6 +136,7 @@ JSON tail output is entry-aware:
   "ledger": "iterations",
   "entries": [
     {
+      "ref": "entry:iterations/2026-05-01T035338Z-k7p3qx-add-tail-json-output.md",
       "timestamp": "2026-05-01T03:53:38Z",
       "summary": "Add tail JSON output",
       "prompt": "PLEASE IMPLEMENT THIS PLAN: Add --json To Ledger Tail",
@@ -151,6 +153,16 @@ printf 'Implemented the parser change and ran go test ./...' \
   | stew append iterations \
       --prompt 'Fix parser edge case' \
       --summary 'Fix parser edge case'
+```
+
+For machine-readable output, use `--json`:
+
+```sh
+stew append iterations \
+  --prompt 'Fix parser edge case' \
+  --summary 'Fix parser edge case' \
+  --message 'Implemented the parser change and ran go test ./...' \
+  --json
 ```
 
 Migrate an older repo from monolithic `.stew/<ledger>.md` files to atomic entry
@@ -186,7 +198,7 @@ stew append plans \
 - `stew ledgers` lists discovered writable ledger names and descriptions; use `--json` for machine-readable output.
 - `stew ledger cat <ledger>` prints one ledger's concatenated entry markdown; `--all` prints every ledger under name sections.
 - `stew ledger tail <ledger>` prints recent entries from one ledger; `--all` prints recent entries from every ledger, and `--json` prints machine-readable output.
-- `stew append <ledger>` appends a timestamped entry to a known ledger.
+- `stew append <ledger>` appends a timestamped entry to a known ledger; use `--json` to print its entry ref.
 - `stew ledger new <name>` creates custom ledger storage and a spec.
 - `stew migrate atomic-entries` splits legacy monolithic ledger files into atomic entry files.
 - `stew version` prints build metadata.

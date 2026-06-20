@@ -39,8 +39,8 @@ func TestRunReturnsLastEntriesInFileOrder(t *testing.T) {
 	if len(result.Entries) != 2 {
 		t.Fatalf("Entries len = %d, want 2", len(result.Entries))
 	}
-	assertEntry(t, result.Entries[0], "2026-05-01T00:00:02Z", "Second", "Test prompt", "second body")
-	assertEntry(t, result.Entries[1], "2026-05-01T00:00:03Z", "Third", "Test prompt", "third body")
+	assertEntry(t, result.Entries[0], "entry:iterations/2026-05-01T000002Z-second.md", "2026-05-01T00:00:02Z", "Second", "Test prompt", "second body")
+	assertEntry(t, result.Entries[1], "entry:iterations/2026-05-01T000003Z-third.md", "2026-05-01T00:00:03Z", "Third", "Test prompt", "third body")
 }
 
 func TestRunReturnsAllEntriesWhenLimitExceedsCount(t *testing.T) {
@@ -160,13 +160,38 @@ func TestRunParsesMultilinePromptAndBody(t *testing.T) {
 	if len(result.Entries) != 1 {
 		t.Fatalf("Entries len = %d, want 1", len(result.Entries))
 	}
-	assertEntry(t, result.Entries[0], "2026-05-01T00:00:01Z", "First", "Line one\nLine two", "body line one\n\nbody line two")
+	assertEntry(t, result.Entries[0], "entry:iterations/2026-05-01T000001Z-first.md", "2026-05-01T00:00:01Z", "First", "Line one\nLine two", "body line one\n\nbody line two")
 }
 
-func assertEntry(t *testing.T, got Entry, timestamp, summary, prompt, body string) {
+func TestRunUsesEntryFileNameForRef(t *testing.T) {
+	tmp := setupTailLedger(t, "iterations", "")
+	entryDir := filepath.Join(tmp, ".stew", "ledgers", "iterations")
+	content := entry("2026-05-01T00:00:01Z", "Generated ID", "body")
+	fileName := "2026-05-01T000001Z-k7p3qx-generated-id.md"
+	if err := os.WriteFile(filepath.Join(entryDir, fileName), []byte(content), 0o644); err != nil {
+		t.Fatalf("write id-bearing entry: %v", err)
+	}
+
+	result, err := Run(Options{
+		TargetDir: tmp,
+		Ledger:    "iterations",
+		Limit:     1,
+	})
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	if len(result.Entries) != 1 {
+		t.Fatalf("Entries len = %d, want 1", len(result.Entries))
+	}
+	if got, want := result.Entries[0].Ref, "entry:iterations/"+fileName; got != want {
+		t.Fatalf("Ref = %q, want %q", got, want)
+	}
+}
+
+func assertEntry(t *testing.T, got Entry, ref, timestamp, summary, prompt, body string) {
 	t.Helper()
-	if got.Timestamp != timestamp || got.Summary != summary || got.Prompt != prompt || got.Body != body {
-		t.Fatalf("Entry = %#v, want timestamp=%q summary=%q prompt=%q body=%q", got, timestamp, summary, prompt, body)
+	if got.Ref != ref || got.Timestamp != timestamp || got.Summary != summary || got.Prompt != prompt || got.Body != body {
+		t.Fatalf("Entry = %#v, want ref=%q timestamp=%q summary=%q prompt=%q body=%q", got, ref, timestamp, summary, prompt, body)
 	}
 }
 

@@ -19,8 +19,10 @@ func runAppend(ctx cliContext, args []string) error {
 	var summary trackedString
 	var message trackedString
 	var filePath trackedString
+	var jsonOutput bool
 
 	flags := newFlagSet("append")
+	flags.BoolVar(&jsonOutput, "json", false, "Print JSON output")
 	flags.StringVar(&targetPath, "path", ".", "Target directory")
 	flags.Var(&prompt, "prompt", "Originating user prompt")
 	flags.Var(&summary, "summary", "Entry summary")
@@ -30,6 +32,7 @@ func runAppend(ctx cliContext, args []string) error {
 	flags.Var(&filePath, "F", "Read the entry body from a file")
 
 	positionals, err := parseInterspersedFlags(flags, args, map[string]flagKind{
+		"json":    boolFlag,
 		"path":    argFlag,
 		"prompt":  argFlag,
 		"summary": argFlag,
@@ -63,7 +66,7 @@ func runAppend(ctx cliContext, args []string) error {
 		stdinIsTTY = func() bool { return readerIsTerminal(ctx.in) }
 	}
 
-	_, err = stewappend.Run(stewappend.Options{
+	result, err := stewappend.Run(stewappend.Options{
 		TargetDir:  targetPath,
 		Ledger:     positionals[0],
 		Prompt:     prompt.value,
@@ -78,8 +81,19 @@ func runAppend(ctx cliContext, args []string) error {
 		return err
 	}
 
+	if jsonOutput {
+		return encodeJSON(ctx.out, appendJSONResponse{
+			Ledger:   positionals[0],
+			EntryRef: result.EntryRef,
+		})
+	}
 	fmt.Fprintf(ctx.out, "Appended %s\n", positionals[0])
 	return nil
+}
+
+type appendJSONResponse struct {
+	Ledger   string `json:"ledger"`
+	EntryRef string `json:"entryRef"`
 }
 
 const appendHelp = `Append a new entry to a Stew ledger.
@@ -93,6 +107,7 @@ source: piped stdin, -m/--message, or -F/--file.
 
 Use "stew full-spec" to read the repository's ledger rules before appending.
 Use "stew append <ledger> --help" when you need the command contract.
+Use --json when an agent or script needs the created entry ref.
 
 Usage:
   stew append <ledger> [flags]
@@ -105,6 +120,7 @@ Examples:
 Flags:
   -F, --file string      Read the entry body from a file
   -h, --help             help for append
+      --json             Print JSON output
   -m, --message string   Use the given text as the entry body
       --path string      Target directory (default ".")
       --prompt string    Originating user prompt

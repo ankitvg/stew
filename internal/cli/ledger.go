@@ -219,6 +219,7 @@ type tailLedgerJSON struct {
 }
 
 type tailEntryJSON struct {
+	Ref       string `json:"ref"`
 	Timestamp string `json:"timestamp"`
 	Summary   string `json:"summary"`
 	Prompt    string `json:"prompt"`
@@ -240,6 +241,7 @@ func tailEntryJSONFromEntries(entries []stewledgertail.Entry) []tailEntryJSON {
 	result := make([]tailEntryJSON, 0, len(entries))
 	for _, entry := range entries {
 		result = append(result, tailEntryJSON{
+			Ref:       entry.Ref,
 			Timestamp: entry.Timestamp,
 			Summary:   entry.Summary,
 			Prompt:    entry.Prompt,
@@ -301,7 +303,7 @@ const ledgerTailHelp = `Print recent Stew ledger entries.
 For one ledger, the command writes the last N entries to stdout. With --all,
 the command writes each ledger's last N entries under a ledger-name section.
 Entries remain in file order. Use --json to print entry-aware machine-readable
-JSON.
+JSON with entry refs.
 
 Usage:
   stew ledger tail <ledger> [flags]

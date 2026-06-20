@@ -31,7 +31,7 @@ func renderStewSpec() string {
 		"- Repo affiliation: ledgers belong to the repository where Stew is initialized.\n\n" +
 		"Older repositories with `.stew/<ledger>.md` files must be upgraded explicitly with `stew migrate atomic-entries`.\n\n" +
 		"## Refs\n\n" +
-		"Refs are canonical strings Stew uses internally to address project objects.\n\n" +
+		"Refs are canonical strings Stew uses to address project objects.\n\n" +
 		"Stew currently supports two ref kinds:\n\n" +
 		"- `entry:<ledger>/<entry-file.md>` addresses an atomic ledger entry.\n" +
 		"- `file:<repo-relative-path>` addresses a repository file.\n\n" +
@@ -39,6 +39,7 @@ func renderStewSpec() string {
 		"entry:decisions/2026-06-20T191722Z-5cxsdb-use-ids-for-generated-entry-filenames.md\n" +
 		"file:internal/stewentry/stewentry.go\n" +
 		"```\n\n" +
+		"JSON tail output includes entry refs for returned entries.\n\n" +
 		"## Working With Stew\n\n" +
 		"Stew loads recent decisions and implementation notes so you can aim repo\n" +
 		"inspection at the relevant files sooner instead of scanning blindly. Treat the\n" +

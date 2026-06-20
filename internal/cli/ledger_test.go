@@ -197,12 +197,14 @@ func TestLedgerTailCommandOutputsJSON(t *testing.T) {
 	}
 	assertTailEntryJSON(t, entries, []wantTailEntry{
 		{
+			ref:       "entry:iterations/2026-05-01T000002Z-second.md",
 			timestamp: "2026-05-01T00:00:02Z",
 			summary:   "Second",
 			prompt:    "Test prompt",
 			body:      "second body",
 		},
 		{
+			ref:       "entry:iterations/2026-05-01T000003Z-third.md",
 			timestamp: "2026-05-01T00:00:03Z",
 			summary:   "Third",
 			prompt:    "Test prompt",
@@ -307,12 +309,14 @@ func TestLedgerTailAllOutputsJSON(t *testing.T) {
 	}
 	assertTailEntryJSON(t, ledgers[0].entries, []wantTailEntry{
 		{
+			ref:       "entry:alpha/2026-05-01T000002Z-alpha-two.md",
 			timestamp: "2026-05-01T00:00:02Z",
 			summary:   "Alpha two",
 			prompt:    "Test prompt",
 			body:      "alpha two",
 		},
 		{
+			ref:       "entry:alpha/2026-05-01T000003Z-alpha-three.md",
 			timestamp: "2026-05-01T00:00:03Z",
 			summary:   "Alpha three",
 			prompt:    "Test prompt",
@@ -321,12 +325,14 @@ func TestLedgerTailAllOutputsJSON(t *testing.T) {
 	})
 	assertTailEntryJSON(t, ledgers[1].entries, []wantTailEntry{
 		{
+			ref:       "entry:zeta/2026-05-01T000005Z-zeta-two.md",
 			timestamp: "2026-05-01T00:00:05Z",
 			summary:   "Zeta two",
 			prompt:    "Test prompt",
 			body:      "zeta two",
 		},
 		{
+			ref:       "entry:zeta/2026-05-01T000006Z-zeta-three.md",
 			timestamp: "2026-05-01T00:00:06Z",
 			summary:   "Zeta three",
 			prompt:    "Test prompt",
@@ -391,6 +397,7 @@ func TestLedgerTailHelpDocumentsEntryAwareOutput(t *testing.T) {
 		"Print recent Stew ledger entries.",
 		"For one ledger, the command writes the last N entries to stdout.",
 		"With --all",
+		"JSON with entry refs.",
 		"stew ledger tail iterations --limit 5",
 		"stew ledger tail iterations --json --limit 5",
 		"stew ledger tail --all --limit 5",
@@ -426,6 +433,7 @@ type decodedTailLedger struct {
 }
 
 type wantTailEntry struct {
+	ref       string
 	timestamp string
 	summary   string
 	prompt    string
@@ -517,14 +525,15 @@ func assertTailEntryJSON(t *testing.T, got []map[string]string, want []wantTailE
 		t.Fatalf("entries len = %d, want %d", len(got), len(want))
 	}
 	for i := range want {
-		if len(got[i]) != 4 {
-			t.Fatalf("entries[%d] keys = %v, want only timestamp, summary, prompt, body", i, keys(got[i]))
+		if len(got[i]) != 5 {
+			t.Fatalf("entries[%d] keys = %v, want only ref, timestamp, summary, prompt, body", i, keys(got[i]))
 		}
-		if got[i]["timestamp"] != want[i].timestamp ||
+		if got[i]["ref"] != want[i].ref ||
+			got[i]["timestamp"] != want[i].timestamp ||
 			got[i]["summary"] != want[i].summary ||
 			got[i]["prompt"] != want[i].prompt ||
 			got[i]["body"] != want[i].body {
-			t.Fatalf("entries[%d] = %#v, want timestamp=%q summary=%q prompt=%q body=%q", i, got[i], want[i].timestamp, want[i].summary, want[i].prompt, want[i].body)
+			t.Fatalf("entries[%d] = %#v, want ref=%q timestamp=%q summary=%q prompt=%q body=%q", i, got[i], want[i].ref, want[i].timestamp, want[i].summary, want[i].prompt, want[i].body)
 		}
 	}
 }
