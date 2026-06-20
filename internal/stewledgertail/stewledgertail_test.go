@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/ankitvg/stew/internal/stewentry"
 )
 
 func TestRunReturnsLastEntriesInFileOrder(t *testing.T) {
@@ -178,8 +180,18 @@ func setupTailLedger(t *testing.T, ledger, content string) string {
 	if err := os.WriteFile(filepath.Join(stewDir, ledger+".spec.md"), []byte("# Spec\n"), 0o644); err != nil {
 		t.Fatalf("write spec: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(stewDir, ledger+".md"), []byte(content), 0o644); err != nil {
-		t.Fatalf("write ledger: %v", err)
+	entryDir := filepath.Join(stewDir, "ledgers", ledger)
+	if err := os.MkdirAll(entryDir, 0o755); err != nil {
+		t.Fatalf("mkdir ledger storage: %v", err)
+	}
+	for _, entry := range stewentry.Parse(content) {
+		name, err := stewentry.Filename(entry.Timestamp, entry.Summary)
+		if err != nil {
+			t.Fatalf("entry filename: %v", err)
+		}
+		if err := os.WriteFile(filepath.Join(entryDir, name), []byte(strings.TrimRight(entry.Content, "\n")+"\n"), 0o644); err != nil {
+			t.Fatalf("write entry: %v", err)
+		}
 	}
 	return tmp
 }

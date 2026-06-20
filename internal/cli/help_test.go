@@ -10,7 +10,7 @@ func TestRootHelpIncludesAgentWorkflow(t *testing.T) {
 	output := executeHelp(t, "--help")
 
 	required := []string{
-		"Stew maintains append-only markdown ledgers through the stew CLI.",
+		"Stew maintains append-only markdown ledger entries through the stew CLI.",
 		`Run "stew help" to discover available commands.`,
 		`Run "stew full-spec" to load the repository's ledger contract.`,
 		`Run "stew <command> --help" before using a command you do not know.`,
@@ -43,7 +43,7 @@ func TestLedgerNewHelpDocumentsCreationContract(t *testing.T) {
 
 	required := []string{
 		"Create a custom Stew ledger in an initialized repository.",
-		"The command creates a ledger and its matching ledger spec.",
+		"The command creates an atomic entry storage directory and its matching ledger",
 		"Names must use lowercase ASCII letters, digits, and single hyphens only.",
 		"omitted, the spec contains TODO guidance",
 		"stew ledger new plans --description",
@@ -52,6 +52,17 @@ func TestLedgerNewHelpDocumentsCreationContract(t *testing.T) {
 	if strings.Contains(output, "--path") {
 		t.Fatalf("ledger new help should not expose --path\n--- output ---\n%s", output)
 	}
+}
+
+func TestMigrateHelpDocumentsCommands(t *testing.T) {
+	output := executeHelp(t, "migrate", "--help")
+
+	required := []string{
+		"Migrate Stew metadata between storage formats.",
+		"atomic-entries",
+		"Split monolithic ledger files into atomic entry files",
+	}
+	assertHelpContains(t, output, required)
 }
 
 func TestAppendHelpDocumentsBodySourcesAndExamples(t *testing.T) {
@@ -72,7 +83,7 @@ func TestInitHelpDocumentsManagedAgentsBlock(t *testing.T) {
 	output := executeHelp(t, "init", "--help")
 
 	required := []string{
-		"creates Stew metadata, the default ledgers/specs, and",
+		"creates Stew metadata, the default ledger storage/specs, and",
 		"Stew block in AGENTS.md",
 		`agents should use "stew help" for CLI discovery`,
 		`Run "stew full-spec"`,

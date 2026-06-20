@@ -73,10 +73,10 @@ func aggregateFileStatus(statuses map[string]stewinit.FileStatus) stewinit.FileS
 
 const initHelp = `Initialize Stew in a repository.
 
-This command creates Stew metadata, the default ledgers/specs, and the managed
-Stew block in AGENTS.md. It is safe to run more than once: existing ledgers are
-preserved, and the managed AGENTS.md block is inserted or updated without
-replacing content outside the block.
+This command creates Stew metadata, the default ledger storage/specs, and the
+managed Stew block in AGENTS.md. It is safe to run more than once: existing
+ledgers are preserved, and the managed AGENTS.md block is inserted or updated
+without replacing content outside the block.
 
 After init, agents should use "stew help" for CLI discovery. Run "stew full-spec"
 to load the repository's ledger contract.

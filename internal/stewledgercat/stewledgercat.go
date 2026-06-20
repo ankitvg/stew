@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -61,20 +62,20 @@ func Run(opts Options) (Result, error) {
 		return Result{}, fmt.Errorf("%w: ledger %q is not defined", ErrUnknownLedger, ledger)
 	}
 
-	ledgerRel := filepath.Join(".stew", ledger+".md")
-	ledgerPath := filepath.Join(stewDir, ledger+".md")
+	ledgerRel := filepath.Join(".stew", "ledgers", ledger)
+	ledgerPath := filepath.Join(stewDir, "ledgers", ledger)
 	ledgerInfo, err := os.Stat(ledgerPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return Result{}, fmt.Errorf("%w: ledger %q has no readable content", ErrMissingLedger, ledger)
+			return Result{}, fmt.Errorf("%w: ledger %q has no atomic entries directory; run `stew migrate atomic-entries` or `stew init` for a fresh repo", ErrMissingLedger, ledger)
 		}
-		return Result{}, fmt.Errorf("stat ledger: %w", err)
+		return Result{}, fmt.Errorf("stat ledger storage: %w", err)
 	}
-	if ledgerInfo.IsDir() {
-		return Result{}, fmt.Errorf("%w: ledger %q has no readable content", ErrMissingLedger, ledger)
+	if !ledgerInfo.IsDir() {
+		return Result{}, fmt.Errorf("%w: ledger %q has no atomic entries directory; run `stew migrate atomic-entries` or `stew init` for a fresh repo", ErrMissingLedger, ledger)
 	}
 
-	bytes, err := os.ReadFile(ledgerPath)
+	content, err := readEntryFiles(ledgerPath)
 	if err != nil {
 		return Result{}, fmt.Errorf("read ledger %q: %w", ledger, err)
 	}
@@ -82,7 +83,7 @@ func Run(opts Options) (Result, error) {
 	return Result{
 		TargetDir:  targetDir,
 		LedgerPath: ledgerRel,
-		Content:    string(bytes),
+		Content:    content,
 	}, nil
 }
 
@@ -107,4 +108,31 @@ func validateLedgerName(name string) (string, error) {
 		return "", fmt.Errorf("%w: ledger name must be a base name", ErrInvalidLedger)
 	}
 	return trimmed, nil
+}
+
+func readEntryFiles(dir string) (string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return "", err
+	}
+
+	names := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
+			continue
+		}
+		names = append(names, entry.Name())
+	}
+	sort.Strings(names)
+
+	parts := make([]string, 0, len(names))
+	for _, name := range names {
+		path := filepath.Join(dir, name)
+		bytes, err := os.ReadFile(path)
+		if err != nil {
+			return "", err
+		}
+		parts = append(parts, strings.TrimRight(string(bytes), "\n")+"\n")
+	}
+	return strings.Join(parts, "\n"), nil
 }

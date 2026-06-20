@@ -23,17 +23,19 @@ func TestRunCreatesLedgerAndSpec(t *testing.T) {
 	if result.TargetDir != tmp {
 		t.Fatalf("TargetDir = %q, want %q", result.TargetDir, tmp)
 	}
-	if result.LedgerPath != filepath.Join(".stew", "security-audits.md") {
+	if result.LedgerPath != filepath.Join(".stew", "ledgers", "security-audits") {
 		t.Fatalf("LedgerPath = %q", result.LedgerPath)
 	}
 	if result.SpecPath != filepath.Join(".stew", "security-audits.spec.md") {
 		t.Fatalf("SpecPath = %q", result.SpecPath)
 	}
 
-	ledger := readTestFile(t, filepath.Join(tmp, ".stew", "security-audits.md"))
-	wantLedger := "# Security Audits\n\n<!-- Managed by stew -->\n"
-	if ledger != wantLedger {
-		t.Fatalf("ledger content = %q, want %q", ledger, wantLedger)
+	ledgerInfo, err := os.Stat(filepath.Join(tmp, ".stew", "ledgers", "security-audits"))
+	if err != nil {
+		t.Fatalf("stat ledger storage: %v", err)
+	}
+	if !ledgerInfo.IsDir() {
+		t.Fatalf("ledger storage should be a directory")
 	}
 
 	spec := readTestFile(t, filepath.Join(tmp, ".stew", "security-audits.spec.md"))
@@ -123,7 +125,7 @@ func TestRunRejectsMissingStewDirectory(t *testing.T) {
 }
 
 func TestRunRejectsExistingFilesWithoutClobbering(t *testing.T) {
-	t.Run("ledger exists", func(t *testing.T) {
+	t.Run("legacy ledger exists", func(t *testing.T) {
 		tmp := setupStewDir(t)
 		ledgerPath := filepath.Join(tmp, ".stew", "plans.md")
 		original := "# Existing Plans\n"
@@ -137,6 +139,22 @@ func TestRunRejectsExistingFilesWithoutClobbering(t *testing.T) {
 		}
 		if got := readTestFile(t, ledgerPath); got != original {
 			t.Fatalf("existing ledger was clobbered: %q", got)
+		}
+		if _, err := os.Stat(filepath.Join(tmp, ".stew", "plans.spec.md")); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("spec should not be created after preflight failure, stat err = %v", err)
+		}
+	})
+
+	t.Run("ledger storage exists", func(t *testing.T) {
+		tmp := setupStewDir(t)
+		ledgerPath := filepath.Join(tmp, ".stew", "ledgers", "plans")
+		if err := os.MkdirAll(ledgerPath, 0o755); err != nil {
+			t.Fatalf("mkdir existing ledger storage: %v", err)
+		}
+
+		_, err := Run(Options{TargetDir: tmp, Name: "plans"})
+		if !errors.Is(err, ErrLedgerExists) {
+			t.Fatalf("error = %v, want ErrLedgerExists", err)
 		}
 		if _, err := os.Stat(filepath.Join(tmp, ".stew", "plans.spec.md")); !errors.Is(err, os.ErrNotExist) {
 			t.Fatalf("spec should not be created after preflight failure, stat err = %v", err)
@@ -158,8 +176,8 @@ func TestRunRejectsExistingFilesWithoutClobbering(t *testing.T) {
 		if got := readTestFile(t, specPath); got != original {
 			t.Fatalf("existing spec was clobbered: %q", got)
 		}
-		if _, err := os.Stat(filepath.Join(tmp, ".stew", "plans.md")); !errors.Is(err, os.ErrNotExist) {
-			t.Fatalf("ledger should not be created after preflight failure, stat err = %v", err)
+		if _, err := os.Stat(filepath.Join(tmp, ".stew", "ledgers", "plans")); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("ledger storage should not be created after preflight failure, stat err = %v", err)
 		}
 	})
 }

@@ -1,11 +1,15 @@
 # stew
 
-Stew is a small CLI for maintaining append-only markdown ledgers in a repository.
-It is meant to give humans and coding agents a durable project memory without a
-database, service, or generated registry.
+Stew is a small CLI for maintaining append-only markdown ledger entries in a
+repository. It is meant to give humans and coding agents a durable project
+memory without a database, service, or generated registry.
 
 Stew exposes project memory through named ledgers. Each ledger has entries and a
 matching spec that explains when and how to write to it.
+
+Ledger specs live at `.stew/<ledger>.spec.md`. Entries are stored atomically as
+one markdown file per entry under `.stew/ledgers/<ledger>/`, with timestamped
+filenames that sort oldest-to-newest.
 
 ## Agent-First Usage
 
@@ -121,6 +125,14 @@ printf 'Implemented the parser change and ran go test ./...' \
       --summary 'Fix parser edge case'
 ```
 
+Migrate an older repo from monolithic `.stew/<ledger>.md` files to atomic entry
+files:
+
+```sh
+stew migrate atomic-entries --dry-run
+stew migrate atomic-entries
+```
+
 Create a custom ledger:
 
 ```sh
@@ -140,14 +152,15 @@ stew append plans \
 
 ## Commands
 
-- `stew init` creates Stew metadata, default ledgers, and a managed `AGENTS.md` block.
+- `stew init` creates Stew metadata, default ledger storage/specs, and a managed `AGENTS.md` block.
 - `stew help` prints the CLI workflow and available commands.
 - `stew full-spec` prints the base Stew spec plus every custom ledger spec.
 - `stew ledgers` lists discovered writable ledger names and descriptions; use `--json` for machine-readable output.
-- `stew ledger cat <ledger>` prints one ledger's raw markdown content; `--all` prints every ledger under name sections.
+- `stew ledger cat <ledger>` prints one ledger's concatenated entry markdown; `--all` prints every ledger under name sections.
 - `stew ledger tail <ledger>` prints recent entries from one ledger; `--all` prints recent entries from every ledger, and `--json` prints machine-readable output.
 - `stew append <ledger>` appends a timestamped entry to a known ledger.
-- `stew ledger new <name>` creates a custom ledger and spec.
+- `stew ledger new <name>` creates custom ledger storage and a spec.
+- `stew migrate atomic-entries` splits legacy monolithic ledger files into atomic entry files.
 - `stew version` prints build metadata.
 
 ## Release Check

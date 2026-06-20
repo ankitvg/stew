@@ -61,20 +61,25 @@ func Run(opts Options) (Result, error) {
 		return Result{}, err
 	}
 
-	ledgerRel := filepath.Join(".stew", name+".md")
+	ledgerRel := filepath.Join(".stew", "ledgers", name)
+	legacyLedgerRel := filepath.Join(".stew", name+".md")
 	specRel := filepath.Join(".stew", name+".spec.md")
 	ledgerPath := filepath.Join(targetDir, ledgerRel)
+	legacyLedgerPath := filepath.Join(targetDir, legacyLedgerRel)
 	specPath := filepath.Join(targetDir, specRel)
 
 	if err := ensureMissing(ledgerPath, "ledger", name); err != nil {
+		return Result{}, err
+	}
+	if err := ensureMissing(legacyLedgerPath, "legacy ledger", name); err != nil {
 		return Result{}, err
 	}
 	if err := ensureMissing(specPath, "ledger spec", name); err != nil {
 		return Result{}, err
 	}
 
-	if err := os.WriteFile(ledgerPath, []byte(renderLedger(name)), 0o644); err != nil {
-		return Result{}, fmt.Errorf("write ledger %q: %w", name, err)
+	if err := os.MkdirAll(ledgerPath, 0o755); err != nil {
+		return Result{}, fmt.Errorf("create ledger storage for %q: %w", name, err)
 	}
 	if err := os.WriteFile(specPath, []byte(renderSpec(name, opts.Description, opts.Threshold)), 0o644); err != nil {
 		return Result{}, fmt.Errorf("write ledger spec for %q: %w", name, err)
@@ -146,11 +151,6 @@ func ensureMissing(path, kind, name string) error {
 		return nil
 	}
 	return fmt.Errorf("stat %s for %q: %w", kind, name, err)
-}
-
-func renderLedger(name string) string {
-	return "# " + titleFromName(name) + "\n\n" +
-		"<!-- Managed by stew -->\n"
 }
 
 func renderSpec(name, description, threshold string) string {

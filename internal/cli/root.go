@@ -66,6 +66,8 @@ func runRoot(ctx cliContext, args []string) error {
 		return runLedger(ctx, args[1:])
 	case "ledgers":
 		return runLedgers(ctx, args[1:])
+	case "migrate":
+		return runMigrate(ctx, args[1:])
 	case "version":
 		return runVersion(ctx, args[1:])
 	default:
@@ -103,6 +105,12 @@ func runHelp(ctx cliContext, args []string) error {
 		fmt.Fprint(ctx.out, ledgerHelp)
 	case "ledgers":
 		fmt.Fprint(ctx.out, ledgersHelp)
+	case "migrate":
+		if len(args) > 1 && args[1] == "atomic-entries" {
+			fmt.Fprint(ctx.out, migrateAtomicEntriesHelp)
+			return nil
+		}
+		fmt.Fprint(ctx.out, migrateHelp)
 	case "version":
 		fmt.Fprint(ctx.out, versionHelp)
 	default:
@@ -212,7 +220,7 @@ func requiredFlags(names ...string) error {
 	return fmt.Errorf("required flag(s) %s not set", strings.Join(quoted, ", "))
 }
 
-const rootHelp = `Stew maintains append-only markdown ledgers through the stew CLI.
+const rootHelp = `Stew maintains append-only markdown ledger entries through the stew CLI.
 
 Use Stew to give agents and humans a durable project memory:
 1. Run "stew help" to discover available commands.
@@ -238,6 +246,7 @@ Available Commands:
   init        Initialize stew context files in a repository
   ledger      Manage stew ledgers
   ledgers     List available ledgers
+  migrate     Migrate stew metadata
   version     Print build version information
 
 Flags:

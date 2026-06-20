@@ -276,9 +276,9 @@ Flags:
 
 const ledgerCatHelp = `Print Stew ledger content.
 
-For one ledger, the command writes raw ledger markdown to stdout. With --all,
-the command writes each ledger under a ledger-name section. Use shell pipes for
-searching or filtering, such as "stew ledger cat iterations | grep parser".
+For one ledger, the command writes concatenated entry markdown to stdout. With
+--all, the command writes each ledger under a ledger-name section. Use shell
+pipes for searching or filtering, such as "stew ledger cat iterations | grep parser".
 
 Usage:
   stew ledger cat <ledger> [flags]
@@ -325,8 +325,9 @@ Flags:
 
 const ledgerNewHelp = `Create a custom Stew ledger in an initialized repository.
 
-The command creates a ledger and its matching ledger spec. The filesystem
-remains the source of truth: no registry, config, or generated code is updated.
+The command creates an atomic entry storage directory and its matching ledger
+spec. The filesystem remains the source of truth: no registry, config, or
+generated code is updated.
 
 Names must use lowercase ASCII letters, digits, and single hyphens only. Supply
 --description and --threshold to make the generated spec useful immediately; if

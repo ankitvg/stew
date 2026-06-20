@@ -25,12 +25,12 @@ func TestListDiscoversWritableLedgers(t *testing.T) {
 	want := []Ledger{
 		{
 			Name:        "alpha",
-			LedgerPath:  filepath.Join(".stew", "alpha.md"),
+			LedgerPath:  filepath.Join(".stew", "ledgers", "alpha"),
 			Description: "Alpha starts here and wraps across lines.",
 		},
 		{
 			Name:        "zeta",
-			LedgerPath:  filepath.Join(".stew", "zeta.md"),
+			LedgerPath:  filepath.Join(".stew", "ledgers", "zeta"),
 			Description: "Zeta description.",
 		},
 	}

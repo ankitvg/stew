@@ -70,7 +70,7 @@ func List(opts Options) (Result, error) {
 
 		ledgers = append(ledgers, Ledger{
 			Name:        name,
-			LedgerPath:  filepath.Join(".stew", name+".md"),
+			LedgerPath:  filepath.Join(".stew", "ledgers", name),
 			Description: extractDescription(string(bytes)),
 		})
 	}

@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/ankitvg/stew/internal/stewentry"
 )
 
 var (
@@ -17,6 +19,7 @@ var (
 	ErrBodyConflict   = errors.New("multiple body sources")
 	ErrMissingPrompt  = errors.New("missing prompt")
 	ErrMissingSummary = errors.New("missing summary")
+	ErrMissingStorage = errors.New("missing ledger storage")
 )
 
 type Options struct {
@@ -36,6 +39,7 @@ type Options struct {
 
 type Result struct {
 	TargetDir  string
+	EntryPath  string
 	LedgerPath string
 }
 
@@ -91,15 +95,30 @@ func Run(opts Options) (Result, error) {
 		return Result{}, err
 	}
 
-	ledgerPath := filepath.Join(stewDir, ledger+".md")
-	entry := renderEntry(opts.Now(), opts.Summary, opts.Prompt, body)
-	if err := appendEntry(ledgerPath, entry); err != nil {
+	entriesDir := filepath.Join(stewDir, "ledgers", ledger)
+	entriesInfo, err := os.Stat(entriesDir)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return Result{}, fmt.Errorf("%w: ledger %q has no atomic entries directory; run `stew migrate atomic-entries` or `stew init` for a fresh repo", ErrMissingStorage, ledger)
+		}
+		return Result{}, fmt.Errorf("stat ledger storage: %w", err)
+	}
+	if !entriesInfo.IsDir() {
+		return Result{}, fmt.Errorf("%w: ledger %q has no atomic entries directory; run `stew migrate atomic-entries` or `stew init` for a fresh repo", ErrMissingStorage, ledger)
+	}
+
+	now := opts.Now()
+	timestamp := stewentry.FormatTimestamp(now)
+	entry := stewentry.Render(now, opts.Summary, opts.Prompt, body)
+	entryPath, err := writeEntryFile(entriesDir, timestamp, opts.Summary, entry)
+	if err != nil {
 		return Result{}, err
 	}
 
 	return Result{
 		TargetDir:  targetDir,
-		LedgerPath: filepath.Join(".stew", ledger+".md"),
+		EntryPath:  filepath.Join(".stew", "ledgers", ledger, filepath.Base(entryPath)),
+		LedgerPath: filepath.Join(".stew", "ledgers", ledger),
 	}, nil
 }
 
@@ -168,48 +187,27 @@ func resolveBody(opts Options) (string, error) {
 	}
 }
 
-func renderEntry(now time.Time, summary, prompt, body string) string {
-	builder := &strings.Builder{}
-	builder.WriteString("## ")
-	builder.WriteString(formatTimestamp(now))
-	builder.WriteString(" — ")
-	builder.WriteString(summary)
-	builder.WriteString("\n\n")
-
-	if strings.ContainsAny(prompt, "\r\n") {
-		builder.WriteString("**Prompt:**\n")
-		builder.WriteString(strings.TrimRight(prompt, "\n"))
-	} else {
-		builder.WriteString("**Prompt:** ")
-		builder.WriteString(prompt)
+func writeEntryFile(entriesDir, timestamp, summary, entry string) (string, error) {
+	for suffix := 1; ; suffix++ {
+		name, err := stewentry.SuffixedFilename(timestamp, summary, suffix)
+		if err != nil {
+			return "", fmt.Errorf("build entry filename: %w", err)
+		}
+		path := filepath.Join(entriesDir, name)
+		file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+		if err != nil {
+			if errors.Is(err, os.ErrExist) {
+				continue
+			}
+			return "", fmt.Errorf("create entry file: %w", err)
+		}
+		if _, err := file.WriteString(entry); err != nil {
+			_ = file.Close()
+			return "", fmt.Errorf("write entry file: %w", err)
+		}
+		if err := file.Close(); err != nil {
+			return "", fmt.Errorf("close entry file: %w", err)
+		}
+		return path, nil
 	}
-	builder.WriteString("\n\n")
-
-	builder.WriteString(strings.TrimRight(body, "\n"))
-	builder.WriteString("\n\n---\n")
-	return builder.String()
-}
-
-func appendEntry(path, entry string) error {
-	existingBytes, err := os.ReadFile(path)
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("read ledger: %w", err)
-	}
-
-	existing := strings.TrimRight(string(existingBytes), "\n")
-	var next string
-	if existing == "" {
-		next = entry
-	} else {
-		next = existing + "\n\n" + entry
-	}
-
-	if err := os.WriteFile(path, []byte(next), 0o644); err != nil {
-		return fmt.Errorf("write ledger: %w", err)
-	}
-	return nil
-}
-
-func formatTimestamp(now time.Time) string {
-	return now.UTC().Format("2006-01-02T15:04:05Z")
 }

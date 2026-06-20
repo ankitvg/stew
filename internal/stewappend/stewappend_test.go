@@ -10,7 +10,7 @@ import (
 )
 
 func TestRunAppendsFormattedEntryFromMessage(t *testing.T) {
-	tmp := setupLedger(t, "iterations", "# Iterations\n\n<!-- Managed by stew -->\n")
+	tmp := setupLedger(t, "iterations")
 
 	result, err := Run(Options{
 		TargetDir:  tmp,
@@ -26,26 +26,28 @@ func TestRunAppendsFormattedEntryFromMessage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run() error = %v", err)
 	}
-	if result.LedgerPath != filepath.Join(".stew", "iterations.md") {
-		t.Fatalf("LedgerPath = %q, want .stew/iterations.md", result.LedgerPath)
+	if result.LedgerPath != filepath.Join(".stew", "ledgers", "iterations") {
+		t.Fatalf("LedgerPath = %q, want .stew/ledgers/iterations", result.LedgerPath)
+	}
+	wantEntryPath := filepath.Join(".stew", "ledgers", "iterations", "2026-04-26T110507Z-add-append-command.md")
+	if result.EntryPath != wantEntryPath {
+		t.Fatalf("EntryPath = %q, want %q", result.EntryPath, wantEntryPath)
 	}
 
-	got := readFile(t, filepath.Join(tmp, ".stew", "iterations.md"))
-	want := "# Iterations\n\n" +
-		"<!-- Managed by stew -->\n\n" +
-		"## 2026-04-26T11:05:07Z — Add append command\n\n" +
+	got := readFile(t, filepath.Join(tmp, result.EntryPath))
+	want := "## 2026-04-26T11:05:07Z — Add append command\n\n" +
 		"**Prompt:** Implement append\n\n" +
 		"Created the append implementation.\n\n" +
 		"---\n"
 	if got != want {
-		t.Fatalf("ledger content mismatch\n--- got ---\n%s\n--- want ---\n%s", got, want)
+		t.Fatalf("entry content mismatch\n--- got ---\n%s\n--- want ---\n%s", got, want)
 	}
 }
 
 func TestRunAllowsMultilinePrompt(t *testing.T) {
-	tmp := setupLedger(t, "decisions", "# Decisions\n\n<!-- Managed by stew -->\n")
+	tmp := setupLedger(t, "decisions")
 
-	_, err := Run(Options{
+	result, err := Run(Options{
 		TargetDir:  tmp,
 		Ledger:     "decisions",
 		Prompt:     "First line\nSecond line",
@@ -58,16 +60,16 @@ func TestRunAllowsMultilinePrompt(t *testing.T) {
 		t.Fatalf("Run() error = %v", err)
 	}
 
-	got := readFile(t, filepath.Join(tmp, ".stew", "decisions.md"))
+	got := readFile(t, filepath.Join(tmp, result.EntryPath))
 	if !strings.Contains(got, "**Prompt:**\nFirst line\nSecond line\n\nDecision body") {
 		t.Fatalf("multi-line prompt was not rendered verbatim: %s", got)
 	}
 }
 
-func TestRunCreatesLedgerFileWhenSpecExists(t *testing.T) {
-	tmp := setupLedger(t, "notes", "")
-	if err := os.Remove(filepath.Join(tmp, ".stew", "notes.md")); err != nil {
-		t.Fatalf("remove notes ledger: %v", err)
+func TestRunRejectsMissingLedgerStorageWhenSpecExists(t *testing.T) {
+	tmp := setupLedger(t, "notes")
+	if err := os.Remove(filepath.Join(tmp, ".stew", "ledgers", "notes")); err != nil {
+		t.Fatalf("remove notes storage: %v", err)
 	}
 
 	_, err := Run(Options{
@@ -79,24 +81,19 @@ func TestRunCreatesLedgerFileWhenSpecExists(t *testing.T) {
 		MessageSet: true,
 		Now:        fixedNow,
 	})
-	if err != nil {
-		t.Fatalf("Run() error = %v", err)
-	}
-
-	got := readFile(t, filepath.Join(tmp, ".stew", "notes.md"))
-	if !strings.HasPrefix(got, "## 2026-04-26T18:39:23Z — Create notes entry\n") {
-		t.Fatalf("new ledger content = %q", got)
+	if !errors.Is(err, ErrMissingStorage) {
+		t.Fatalf("error = %v, want ErrMissingStorage", err)
 	}
 }
 
 func TestRunReadsBodyFromFile(t *testing.T) {
-	tmp := setupLedger(t, "iterations", "# Iterations\n\n<!-- Managed by stew -->\n")
+	tmp := setupLedger(t, "iterations")
 	bodyPath := filepath.Join(tmp, "body.md")
 	if err := os.WriteFile(bodyPath, []byte("File body\n"), 0o644); err != nil {
 		t.Fatalf("write body file: %v", err)
 	}
 
-	_, err := Run(Options{
+	result, err := Run(Options{
 		TargetDir: tmp,
 		Ledger:    "iterations",
 		Prompt:    "Use file body",
@@ -108,16 +105,16 @@ func TestRunReadsBodyFromFile(t *testing.T) {
 		t.Fatalf("Run() error = %v", err)
 	}
 
-	got := readFile(t, filepath.Join(tmp, ".stew", "iterations.md"))
+	got := readFile(t, filepath.Join(tmp, result.EntryPath))
 	if !strings.Contains(got, "\n\nFile body\n\n---\n") {
-		t.Fatalf("file body missing from ledger: %s", got)
+		t.Fatalf("file body missing from entry: %s", got)
 	}
 }
 
 func TestRunReadsBodyFromStdin(t *testing.T) {
-	tmp := setupLedger(t, "iterations", "# Iterations\n\n<!-- Managed by stew -->\n")
+	tmp := setupLedger(t, "iterations")
 
-	_, err := Run(Options{
+	result, err := Run(Options{
 		TargetDir: tmp,
 		Ledger:    "iterations",
 		Prompt:    "Use stdin body",
@@ -132,14 +129,42 @@ func TestRunReadsBodyFromStdin(t *testing.T) {
 		t.Fatalf("Run() error = %v", err)
 	}
 
-	got := readFile(t, filepath.Join(tmp, ".stew", "iterations.md"))
+	got := readFile(t, filepath.Join(tmp, result.EntryPath))
 	if !strings.Contains(got, "\n\nstdin body\n\n---\n") {
-		t.Fatalf("stdin body missing from ledger: %s", got)
+		t.Fatalf("stdin body missing from entry: %s", got)
+	}
+}
+
+func TestRunUsesNumericSuffixForSameSecondCollision(t *testing.T) {
+	tmp := setupLedger(t, "iterations")
+	opts := Options{
+		TargetDir:  tmp,
+		Ledger:     "iterations",
+		Prompt:     "Prompt",
+		Summary:    "Same summary",
+		Message:    "Body",
+		MessageSet: true,
+		Now:        fixedNow,
+	}
+	first, err := Run(opts)
+	if err != nil {
+		t.Fatalf("first Run() error = %v", err)
+	}
+	second, err := Run(opts)
+	if err != nil {
+		t.Fatalf("second Run() error = %v", err)
+	}
+
+	if filepath.Base(first.EntryPath) != "2026-04-26T183923Z-same-summary.md" {
+		t.Fatalf("first EntryPath = %q", first.EntryPath)
+	}
+	if filepath.Base(second.EntryPath) != "2026-04-26T183923Z-same-summary-2.md" {
+		t.Fatalf("second EntryPath = %q", second.EntryPath)
 	}
 }
 
 func TestRunRejectsMissingAndConflictingBodySources(t *testing.T) {
-	tmp := setupLedger(t, "iterations", "# Iterations\n\n<!-- Managed by stew -->\n")
+	tmp := setupLedger(t, "iterations")
 
 	_, err := Run(Options{
 		TargetDir: tmp,
@@ -175,7 +200,7 @@ func TestRunRejectsMissingAndConflictingBodySources(t *testing.T) {
 }
 
 func TestRunRejectsInvalidLedgers(t *testing.T) {
-	tmp := setupLedger(t, "iterations", "# Iterations\n\n<!-- Managed by stew -->\n")
+	tmp := setupLedger(t, "iterations")
 
 	cases := []string{"", "stew", "../iterations", "nested/name", `nested\name`, "bad..name", " iterations"}
 	for _, ledger := range cases {
@@ -197,7 +222,7 @@ func TestRunRejectsInvalidLedgers(t *testing.T) {
 }
 
 func TestRunRejectsUnknownLedger(t *testing.T) {
-	tmp := setupLedger(t, "iterations", "# Iterations\n\n<!-- Managed by stew -->\n")
+	tmp := setupLedger(t, "iterations")
 
 	_, err := Run(Options{
 		TargetDir:  tmp,
@@ -214,7 +239,7 @@ func TestRunRejectsUnknownLedger(t *testing.T) {
 }
 
 func TestRunRejectsMissingPromptAndSummary(t *testing.T) {
-	tmp := setupLedger(t, "iterations", "# Iterations\n\n<!-- Managed by stew -->\n")
+	tmp := setupLedger(t, "iterations")
 
 	_, err := Run(Options{
 		TargetDir:  tmp,
@@ -242,7 +267,7 @@ func TestRunRejectsMissingPromptAndSummary(t *testing.T) {
 	}
 }
 
-func setupLedger(t *testing.T, ledger string, ledgerBody string) string {
+func setupLedger(t *testing.T, ledger string) string {
 	t.Helper()
 	tmp := t.TempDir()
 	stewDir := filepath.Join(tmp, ".stew")
@@ -252,8 +277,8 @@ func setupLedger(t *testing.T, ledger string, ledgerBody string) string {
 	if err := os.WriteFile(filepath.Join(stewDir, ledger+".spec.md"), []byte("# Spec\n"), 0o644); err != nil {
 		t.Fatalf("write spec: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(stewDir, ledger+".md"), []byte(ledgerBody), 0o644); err != nil {
-		t.Fatalf("write ledger: %v", err)
+	if err := os.MkdirAll(filepath.Join(stewDir, "ledgers", ledger), 0o755); err != nil {
+		t.Fatalf("mkdir ledger storage: %v", err)
 	}
 	return tmp
 }

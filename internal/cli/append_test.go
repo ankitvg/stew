@@ -26,9 +26,9 @@ func TestAppendCommandAppendsMessageBody(t *testing.T) {
 		t.Fatalf("stdout = %q", got)
 	}
 
-	content := readCLIFile(t, filepath.Join(tmp, ".stew", "iterations.md"))
+	content := readOnlyCLIEntry(t, tmp, "iterations")
 	if !strings.Contains(content, "**Prompt:** Implement append\n\nCLI body\n\n---\n") {
-		t.Fatalf("ledger missing appended body: %s", content)
+		t.Fatalf("entry missing appended body: %s", content)
 	}
 }
 
@@ -45,9 +45,9 @@ func TestAppendCommandReadsDefaultStdinBody(t *testing.T) {
 		t.Fatalf("ExecuteWithIO() error = %v", err)
 	}
 
-	content := readCLIFile(t, filepath.Join(tmp, ".stew", "iterations.md"))
+	content := readOnlyCLIEntry(t, tmp, "iterations")
 	if !strings.Contains(content, "**Prompt:** Use stdin\n\nstdin body\n\n---\n") {
-		t.Fatalf("ledger missing stdin body: %s", content)
+		t.Fatalf("entry missing stdin body: %s", content)
 	}
 }
 
@@ -97,10 +97,23 @@ func setupCLILedger(t *testing.T, ledger string) string {
 	if err := os.WriteFile(filepath.Join(stewDir, ledger+".spec.md"), []byte("# Spec\n"), 0o644); err != nil {
 		t.Fatalf("write spec: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(stewDir, ledger+".md"), []byte("# Iterations\n\n<!-- Managed by stew -->\n"), 0o644); err != nil {
-		t.Fatalf("write ledger: %v", err)
+	if err := os.MkdirAll(filepath.Join(stewDir, "ledgers", ledger), 0o755); err != nil {
+		t.Fatalf("mkdir ledger storage: %v", err)
 	}
 	return tmp
+}
+
+func readOnlyCLIEntry(t *testing.T, dir, ledger string) string {
+	t.Helper()
+	entryDir := filepath.Join(dir, ".stew", "ledgers", ledger)
+	entries, err := os.ReadDir(entryDir)
+	if err != nil {
+		t.Fatalf("read entry dir: %v", err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("entries len = %d, want 1", len(entries))
+	}
+	return readCLIFile(t, filepath.Join(entryDir, entries[0].Name()))
 }
 
 func readCLIFile(t *testing.T, path string) string {

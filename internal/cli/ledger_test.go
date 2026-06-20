@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/ankitvg/stew/internal/stewentry"
 )
 
 func TestLedgerNewCommandCreatesLedgerAndSpec(t *testing.T) {
@@ -28,9 +30,12 @@ func TestLedgerNewCommandCreatesLedgerAndSpec(t *testing.T) {
 		t.Fatalf("stdout = %q, want %q", out.String(), wantOut)
 	}
 
-	ledger := readCLIFile(t, filepath.Join(tmp, ".stew", "plans.md"))
-	if ledger != "# Plans\n\n<!-- Managed by stew -->\n" {
-		t.Fatalf("ledger content = %q", ledger)
+	ledgerInfo, err := os.Stat(filepath.Join(tmp, ".stew", "ledgers", "plans"))
+	if err != nil {
+		t.Fatalf("stat ledger storage: %v", err)
+	}
+	if !ledgerInfo.IsDir() {
+		t.Fatalf("ledger storage should be a directory")
 	}
 	spec := readCLIFile(t, filepath.Join(tmp, ".stew", "plans.spec.md"))
 	if !strings.Contains(spec, "Reasoning artifacts for future work.") {
@@ -86,7 +91,7 @@ func TestLedgerCatCommandPrintsRawLedger(t *testing.T) {
 		t.Fatalf("ExecuteWithIO() error = %v", err)
 	}
 
-	want := "# Iterations\n\n<!-- Managed by stew -->\n"
+	want := ""
 	if out.String() != want {
 		t.Fatalf("stdout = %q, want %q", out.String(), want)
 	}
@@ -101,7 +106,7 @@ func TestLedgerCatCommandAcceptsPathFlag(t *testing.T) {
 		t.Fatalf("ExecuteWithIO() error = %v", err)
 	}
 
-	want := "# Iterations\n\n<!-- Managed by stew -->\n"
+	want := ""
 	if out.String() != want {
 		t.Fatalf("stdout = %q, want %q", out.String(), want)
 	}
@@ -109,8 +114,10 @@ func TestLedgerCatCommandAcceptsPathFlag(t *testing.T) {
 
 func TestLedgerCatAllPrintsAllLedgers(t *testing.T) {
 	tmp := setupCLIAllLedgers(t)
-	writeCLIAllLedger(t, tmp, "zeta", "# Zeta\n\n<!-- Managed by stew -->\n")
-	writeCLIAllLedger(t, tmp, "alpha", "# Alpha\n\n<!-- Managed by stew -->\n")
+	zeta := cliEntry("2026-05-01T00:00:02Z", "Zeta", "zeta")
+	alpha := cliEntry("2026-05-01T00:00:01Z", "Alpha", "alpha")
+	writeCLIAllLedger(t, tmp, "zeta", zeta)
+	writeCLIAllLedger(t, tmp, "alpha", alpha)
 	var out bytes.Buffer
 
 	err := ExecuteWithIO([]string{"ledger", "cat", "--all", "--path", tmp}, strings.NewReader(""), &out, &bytes.Buffer{})
@@ -118,8 +125,8 @@ func TestLedgerCatAllPrintsAllLedgers(t *testing.T) {
 		t.Fatalf("ExecuteWithIO() error = %v", err)
 	}
 
-	want := "# alpha\n\n# Alpha\n\n<!-- Managed by stew -->\n\n" +
-		"# zeta\n\n# Zeta\n\n<!-- Managed by stew -->\n"
+	want := "# alpha\n\n" + alpha + "\n" +
+		"# zeta\n\n" + zeta
 	if out.String() != want {
 		t.Fatalf("stdout = %q, want %q", out.String(), want)
 	}
@@ -133,8 +140,8 @@ func TestLedgerCatHelpDocumentsRawOutput(t *testing.T) {
 
 	required := []string{
 		"Print Stew ledger content.",
-		"For one ledger, the command writes raw ledger markdown to stdout.",
-		"With --all",
+		"For one ledger, the command writes concatenated entry markdown to stdout.",
+		"--all, the command writes each ledger under a ledger-name section.",
 		"stew ledger cat --all",
 		"stew ledger cat iterations | grep",
 		"--all",
@@ -524,8 +531,18 @@ func assertTailEntryJSON(t *testing.T, got []map[string]string, want []wantTailE
 
 func writeCLILedgerContent(t *testing.T, dir, ledger, content string) {
 	t.Helper()
-	if err := os.WriteFile(filepath.Join(dir, ".stew", ledger+".md"), []byte(content), 0o644); err != nil {
-		t.Fatalf("write ledger: %v", err)
+	entryDir := filepath.Join(dir, ".stew", "ledgers", ledger)
+	if err := os.MkdirAll(entryDir, 0o755); err != nil {
+		t.Fatalf("mkdir ledger storage: %v", err)
+	}
+	for _, entry := range stewentry.Parse(content) {
+		name, err := stewentry.Filename(entry.Timestamp, entry.Summary)
+		if err != nil {
+			t.Fatalf("entry filename: %v", err)
+		}
+		if err := os.WriteFile(filepath.Join(entryDir, name), []byte(strings.TrimRight(entry.Content, "\n")+"\n"), 0o644); err != nil {
+			t.Fatalf("write entry: %v", err)
+		}
 	}
 }
 
@@ -540,16 +557,14 @@ func writeCLIAllLedger(t *testing.T, dir, ledger, content string) {
 	if err := os.WriteFile(filepath.Join(stewDir, ledger+".spec.md"), []byte("# "+ledger+" Spec\n\nDescription.\n"), 0o644); err != nil {
 		t.Fatalf("write spec: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(stewDir, ledger+".md"), []byte(content), 0o644); err != nil {
-		t.Fatalf("write ledger: %v", err)
-	}
+	writeCLILedgerContent(t, dir, ledger, content)
 }
 
 func cliLedgerContent(entries ...string) string {
 	if len(entries) == 0 {
-		return "# Iterations\n\n<!-- Managed by stew -->\n"
+		return ""
 	}
-	return "# Iterations\n\n<!-- Managed by stew -->\n\n" + strings.Join(entries, "\n")
+	return strings.Join(entries, "\n")
 }
 
 func cliEntry(timestamp, summary, body string) string {
