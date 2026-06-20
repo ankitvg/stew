@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import secrets
 import subprocess
 import sys
 from collections import Counter
@@ -304,10 +305,15 @@ def verify_import(plan: ImportPlan) -> None:
 
 def filename(timestamp: str, summary: str, suffix: int) -> str:
     compact = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H%M%SZ")
-    base = f"{compact}-{slug(summary)}"
+    base = f"{compact}-{entry_id()}-{slug(summary)}"
     if suffix > 1:
         base += f"-{suffix}"
     return base + ".md"
+
+
+def entry_id() -> str:
+    alphabet = "abcdefghijklmnopqrstuvwxyz234567"
+    return "".join(secrets.choice(alphabet) for _ in range(6))
 
 
 def slug(value: str) -> str:

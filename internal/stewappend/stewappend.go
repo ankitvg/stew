@@ -34,7 +34,8 @@ type Options struct {
 	Stdin      io.Reader
 	StdinIsTTY func() bool
 
-	Now func() time.Time
+	Now        func() time.Time
+	NewEntryID func() (string, error)
 }
 
 type Result struct {
@@ -49,6 +50,9 @@ func Run(opts Options) (Result, error) {
 	}
 	if opts.Now == nil {
 		opts.Now = time.Now
+	}
+	if opts.NewEntryID == nil {
+		opts.NewEntryID = stewentry.RandomID
 	}
 
 	targetDir, err := filepath.Abs(opts.TargetDir)
@@ -110,7 +114,11 @@ func Run(opts Options) (Result, error) {
 	now := opts.Now()
 	timestamp := stewentry.FormatTimestamp(now)
 	entry := stewentry.Render(now, opts.Summary, opts.Prompt, body)
-	entryPath, err := writeEntryFile(entriesDir, timestamp, opts.Summary, entry)
+	entryID, err := opts.NewEntryID()
+	if err != nil {
+		return Result{}, err
+	}
+	entryPath, err := writeEntryFile(entriesDir, timestamp, entryID, opts.Summary, entry)
 	if err != nil {
 		return Result{}, err
 	}
@@ -187,9 +195,9 @@ func resolveBody(opts Options) (string, error) {
 	}
 }
 
-func writeEntryFile(entriesDir, timestamp, summary, entry string) (string, error) {
+func writeEntryFile(entriesDir, timestamp, entryID, summary, entry string) (string, error) {
 	for suffix := 1; ; suffix++ {
-		name, err := stewentry.SuffixedFilename(timestamp, summary, suffix)
+		name, err := stewentry.SuffixedFilenameWithID(timestamp, entryID, summary, suffix)
 		if err != nil {
 			return "", fmt.Errorf("build entry filename: %w", err)
 		}

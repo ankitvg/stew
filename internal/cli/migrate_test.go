@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -22,7 +23,11 @@ func TestMigrateAtomicEntriesCommandMigratesLegacyLedger(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(tmp, ".stew", "iterations.md")); !os.IsNotExist(err) {
 		t.Fatalf("legacy ledger should be removed, stat err = %v", err)
 	}
-	entry := readCLIFile(t, filepath.Join(tmp, ".stew", "ledgers", "iterations", "2026-05-01T000001Z-first-entry.md"))
+	entryPath := onlyMigratedCLIEntry(t, tmp, "iterations")
+	if !regexp.MustCompile(`^2026-05-01T000001Z-[a-z2-7]{6}-first-entry\.md$`).MatchString(filepath.Base(entryPath)) {
+		t.Fatalf("entry filename = %q, want timestamp-id-slug shape", filepath.Base(entryPath))
+	}
+	entry := readCLIFile(t, entryPath)
 	if !strings.Contains(entry, "Body") {
 		t.Fatalf("entry content = %s", entry)
 	}
@@ -76,4 +81,16 @@ func setupCLILegacyLedger(t *testing.T) string {
 		t.Fatalf("write legacy ledger: %v", err)
 	}
 	return tmp
+}
+
+func onlyMigratedCLIEntry(t *testing.T, dir, ledger string) string {
+	t.Helper()
+	matches, err := filepath.Glob(filepath.Join(dir, ".stew", "ledgers", ledger, "*.md"))
+	if err != nil {
+		t.Fatalf("glob migrated entries: %v", err)
+	}
+	if len(matches) != 1 {
+		t.Fatalf("migrated entries len = %d, want 1: %v", len(matches), matches)
+	}
+	return matches[0]
 }

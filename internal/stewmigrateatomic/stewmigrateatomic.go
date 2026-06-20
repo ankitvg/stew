@@ -12,8 +12,9 @@ import (
 )
 
 type Options struct {
-	TargetDir string
-	DryRun    bool
+	TargetDir  string
+	DryRun     bool
+	NewEntryID func() (string, error)
 }
 
 type Result struct {
@@ -37,6 +38,10 @@ type LedgerResult struct {
 }
 
 func Run(opts Options) (Result, error) {
+	if opts.NewEntryID == nil {
+		opts.NewEntryID = stewentry.RandomID
+	}
+
 	ledgersResult, err := stewledgers.List(stewledgers.Options{TargetDir: opts.TargetDir})
 	if err != nil {
 		return Result{}, err
@@ -100,7 +105,7 @@ func Run(opts Options) (Result, error) {
 
 	written := make(map[string][]string, len(prepared))
 	for _, ledger := range prepared {
-		paths, err := writeLedgerEntries(ledger.entryDir, ledger.entries)
+		paths, err := writeLedgerEntries(ledger.entryDir, ledger.entries, opts.NewEntryID)
 		if err != nil {
 			return Result{}, fmt.Errorf("write atomic entries for %q: %w", ledger.name, err)
 		}
@@ -154,7 +159,7 @@ func hasOnlyPreamble(content string) bool {
 	return len(remaining) == 0
 }
 
-func writeLedgerEntries(entryDir string, entries []stewentry.Entry) ([]string, error) {
+func writeLedgerEntries(entryDir string, entries []stewentry.Entry, newEntryID func() (string, error)) ([]string, error) {
 	if err := ensureWritableEntryDir(entryDir); err != nil {
 		return nil, err
 	}
@@ -162,7 +167,11 @@ func writeLedgerEntries(entryDir string, entries []stewentry.Entry) ([]string, e
 	paths := make([]string, 0, len(entries))
 	for _, entry := range entries {
 		content := strings.TrimRight(entry.Content, "\n") + "\n"
-		path, err := createEntryFile(entryDir, entry.Timestamp, entry.Summary, content)
+		entryID, err := newEntryID()
+		if err != nil {
+			return nil, err
+		}
+		path, err := createEntryFile(entryDir, entry.Timestamp, entryID, entry.Summary, content)
 		if err != nil {
 			return nil, err
 		}
@@ -194,9 +203,9 @@ func ensureWritableEntryDir(entryDir string) error {
 	return os.MkdirAll(entryDir, 0o755)
 }
 
-func createEntryFile(entryDir, timestamp, summary, content string) (string, error) {
+func createEntryFile(entryDir, timestamp, entryID, summary, content string) (string, error) {
 	for suffix := 1; ; suffix++ {
-		name, err := stewentry.SuffixedFilename(timestamp, summary, suffix)
+		name, err := stewentry.SuffixedFilenameWithID(timestamp, entryID, summary, suffix)
 		if err != nil {
 			return "", err
 		}
