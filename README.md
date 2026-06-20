@@ -49,7 +49,29 @@ maintainers need to preserve belong in `decisions`.
 
 ## Install
 
-For a tagged release:
+On macOS with Homebrew:
+
+```sh
+brew tap ankitvg/tap
+brew install stew
+stew version
+```
+
+To upgrade an existing Homebrew install:
+
+```sh
+brew update
+brew upgrade ankitvg/tap/stew
+```
+
+If multiple Stew binaries are installed, verify which one your shell will use:
+
+```sh
+command -v stew
+stew version
+```
+
+As an alternative, install a tagged release with Go:
 
 ```sh
 go install github.com/ankitvg/stew/cmd/stew@v0.1.0
