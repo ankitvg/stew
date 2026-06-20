@@ -24,6 +24,13 @@ type Result struct {
 	TargetDir  string
 	LedgerPath string
 	Content    string
+	EntryFiles []EntryFile
+}
+
+type EntryFile struct {
+	Name    string
+	RelPath string
+	Content string
 }
 
 func Run(opts Options) (Result, error) {
@@ -75,7 +82,7 @@ func Run(opts Options) (Result, error) {
 		return Result{}, fmt.Errorf("%w: ledger %q has no atomic entries directory; run `stew migrate atomic-entries` or `stew init` for a fresh repo", ErrMissingLedger, ledger)
 	}
 
-	content, err := readEntryFiles(ledgerPath)
+	entryFiles, content, err := readEntryFiles(ledgerPath, ledgerRel)
 	if err != nil {
 		return Result{}, fmt.Errorf("read ledger %q: %w", ledger, err)
 	}
@@ -84,6 +91,7 @@ func Run(opts Options) (Result, error) {
 		TargetDir:  targetDir,
 		LedgerPath: ledgerRel,
 		Content:    content,
+		EntryFiles: entryFiles,
 	}, nil
 }
 
@@ -110,10 +118,10 @@ func validateLedgerName(name string) (string, error) {
 	return trimmed, nil
 }
 
-func readEntryFiles(dir string) (string, error) {
+func readEntryFiles(dir, ledgerRel string) ([]EntryFile, string, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 
 	names := make([]string, 0, len(entries))
@@ -126,13 +134,20 @@ func readEntryFiles(dir string) (string, error) {
 	sort.Strings(names)
 
 	parts := make([]string, 0, len(names))
+	entryFiles := make([]EntryFile, 0, len(names))
 	for _, name := range names {
 		path := filepath.Join(dir, name)
 		bytes, err := os.ReadFile(path)
 		if err != nil {
-			return "", err
+			return nil, "", err
 		}
-		parts = append(parts, strings.TrimRight(string(bytes), "\n")+"\n")
+		content := strings.TrimRight(string(bytes), "\n") + "\n"
+		entryFiles = append(entryFiles, EntryFile{
+			Name:    name,
+			RelPath: filepath.ToSlash(filepath.Join(ledgerRel, name)),
+			Content: content,
+		})
+		parts = append(parts, content)
 	}
-	return strings.Join(parts, "\n"), nil
+	return entryFiles, strings.Join(parts, "\n"), nil
 }
