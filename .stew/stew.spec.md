@@ -21,7 +21,7 @@ Older repositories with `.stew/<ledger>.md` files must be upgraded explicitly wi
 
 ## Refs
 
-Refs are canonical strings Stew uses internally to address project objects.
+Refs are canonical strings Stew uses to address project objects.
 
 Stew currently supports two ref kinds:
 
@@ -32,6 +32,8 @@ Stew currently supports two ref kinds:
 entry:decisions/2026-06-20T191722Z-5cxsdb-use-ids-for-generated-entry-filenames.md
 file:internal/stewentry/stewentry.go
 ```
+
+JSON tail output includes entry refs for returned entries.
 
 ## Working With Stew
 
