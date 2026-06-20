@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "createdAt": "2026-06-20T22:39:14Z",
+  "source": "entry:iterations/2026-06-20T223914Z-bmsgof-update-go-toolchain-pin.md",
+  "target": "file:.github/workflows/release.yml"
+}
