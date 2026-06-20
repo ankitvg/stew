@@ -21,16 +21,17 @@ Older repositories with `.stew/<ledger>.md` files must be upgraded explicitly wi
 
 ## Refs
 
-Refs are canonical strings Stew uses to address project objects. They are an internal foundation for future relationship primitives such as links; normal users do not need a separate refs workflow yet.
+Refs are canonical strings Stew uses internally to address project objects.
 
-V1 refs support ledger entries and repo files:
+Stew currently supports two ref kinds:
+
+- `entry:<ledger>/<entry-file.md>` addresses an atomic ledger entry.
+- `file:<repo-relative-path>` addresses a repository file.
 
 ```txt
 entry:decisions/2026-06-20T191722Z-5cxsdb-use-ids-for-generated-entry-filenames.md
 file:internal/stewentry/stewentry.go
 ```
-
-Future commands may accept regular paths and internally convert them to refs.
 
 ## Working With Stew
 

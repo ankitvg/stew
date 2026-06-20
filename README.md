@@ -12,12 +12,10 @@ one markdown file per entry under `.stew/ledgers/<ledger>/`, with timestamped
 filenames that sort oldest-to-newest. Newly generated filenames include short
 Stew-generated ids before the summary slug.
 
-Stew also has an internal ref vocabulary for addressing project objects. V1
-refs support ledger entries, such as
+Stew also has an internal ref vocabulary for addressing project objects. It
+currently supports ledger entry refs, such as
 `entry:decisions/2026-06-20T191722Z-5cxsdb-use-ids-for-generated-entry-filenames.md`,
-and repo files, such as `file:internal/stewentry/stewentry.go`. Refs are the
-foundation for future relationship primitives like links; normal usage does not
-require a separate refs workflow yet.
+and repo file refs, such as `file:internal/stewentry/stewentry.go`.
 
 ## Agent-First Usage
 
